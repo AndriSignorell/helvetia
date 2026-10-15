@@ -1,0 +1,8 @@
+HistoricalCode,BfsCode,ValidFrom,ValidTo,Level,Parent,Name,ShortName,Einschreibung,Streichung,Rec_Type_de,Rec_Type_de
+1,1,12.09.1848,,1,,Zürich,ZH,,,,
+2,13,12.09.1848,,1,,Basel-Landschaft,BL,,,,
+10053,101,01.01.1960,,2,1,Bezirk Affoltern,Affoltern,,,,
+10137,1301,01.01.1960,,2,2,Bezirk Arlesheim,Arlesheim,,,,
+11742,1,01.01.1960,,3,10053,Aeugst am Albis,Aeugst am Albis,,,,
+11743,2,01.01.1960,,3,10053,Affoltern am Albis,Affoltern am Albis,,,,
+13187,2761,01.01.1960,,3,10137,Aesch (BL),Aesch (BL),,,,

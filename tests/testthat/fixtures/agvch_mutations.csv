@@ -1,0 +1,5 @@
+MutationNumber,MutationDate,InitialHistoricalCode,InitialCode,InitialName,InitialParentHistoricalCode,InitialParentName,InitialStep,TerminalHistoricalCode,TerminalCode,TerminalName,TerminalParentHistoricalCode,TerminalParentName,TerminalStep
+3700,01.01.2020,14001,4021,Alpha,10200,Bezirk X,1,16000,4045,Gamma,10200,Bezirk X,2
+3700,01.01.2020,14002,4022,Beta,10200,Bezirk X,1,16000,4045,Gamma,10200,Bezirk X,2
+3701,01.01.2020,14003,4030,Delta,10200,Bezirk X,1,16001,4030,Delta-Neu,10201,Bezirk Y,2
+3702,01.01.2021,14004,4031,Epsilon,10200,Bezirk X,1,,,,,,

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<message:Structure xmlns:message="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message" xmlns:structure="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure" xmlns:common="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common" xmlns:xml="http://www.w3.org/XML/1998/namespace">
+<message:Structures><structure:Codelists>
+<structure:Codelist id="CL_AREA_NOAS" agencyID="CH1" version="1.0.0">
+<common:Name xml:lang="de">NOAS</common:Name>
+<structure:Code id="1"><common:Name xml:lang="de">Siedlungsflächen</common:Name><common:Name xml:lang="en">Settlement areas</common:Name></structure:Code>
+<structure:Code id="101"><common:Name xml:lang="de">Industrie- und Gewerbeareal</common:Name><structure:Parent><Ref id="1"/></structure:Parent></structure:Code>
+<structure:Code id="102"><common:Name xml:lang="de">Gebäudeareal</common:Name><structure:Parent><Ref id="1"/></structure:Parent></structure:Code>
+</structure:Codelist>
+</structure:Codelists></message:Structures></message:Structure>

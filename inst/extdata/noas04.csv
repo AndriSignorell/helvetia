@@ -1,0 +1,121 @@
+code;parent;name_de
+1;;Siedlungsflächen
+2;;Landwirtschaftsflächen
+3;;Bestockte Flächen
+4;;Unproduktive Flächen
+101;1;Industrie- und Gewerbeareal
+102;1;Gebäudeareal
+103;1;Verkehrsflächen
+104;1;Besondere Siedlungsflächen
+105;1;Erholungs- und Grünanlagen
+206;2;Obst-, Reb- und Gartenbauflächen
+207;2;Ackerland
+208;2;Naturwiesen, Heimweiden
+209;2;Alpwirtschaftsflächen
+310;3;Wald (ohne Gebüschwald)
+311;3;Gebüschwald
+312;3;Gehölze
+413;4;Stehende Gewässer
+414;4;Fliessgewässer
+415;4;Unproduktive Vegetation
+416;4;Vegetationslose Flächen
+417;4;Gletscher, Firn
+10101;101;Industrie- und Gewerbeareal
+10202;102;Wohnareal
+10203;102;Öffentliches Gebäudeareal
+10204;102;Landwirtschaftliches Gebäudeareal
+10205;102;Nicht spezifiziertes Gebäudeareal
+10306;103;Strassenareal
+10307;103;Bahnareal
+10308;103;Flugplatzareal
+10409;104;Besondere Siedlungsflächen
+10510;105;Erholungs- und Grünanlagen
+20611;206;Obstbauflächen
+20612;206;Rebbauflächen
+20613;206;Gartenbauflächen
+20714;207;Ackerland
+20815;208;Naturwiesen
+20816;208;Heimweiden
+20917;209;Alpwiesen
+20918;209;Alp- und Juraweiden
+31019;310;Geschlossener Wald
+31020;310;Aufgelöster Wald
+31121;311;Gebüschwald
+31222;312;Gehölze
+41323;413;Seen
+41424;414;Fliessgewässer
+41525;415;Unproduktive Vegetation
+41626;416;Vegetationslose Flächen
+41727;417;Gletscher, Firn
+1010101;10101;Industrie- und Gewerbegebäude
+1010102;10101;Umschwung von Industrie- und Gewerbegebäuden
+1020203;10202;Ein- und Zweifamilienhäuser
+1020204;10202;Umschwung von Ein- und Zweifamilienhäusern
+1020205;10202;Reihen- und Terrassenhäuser
+1020206;10202;Umschwung von Reihen- und Terrassenhäusern
+1020207;10202;Mehrfamilienhäuser
+1020208;10202;Umschwung von Mehrfamilienhäusern
+1020309;10203;Öffentliche Gebäude
+1020310;10203;Umschwung von öffentlichen Gebäuden
+1020411;10204;Landwirtschaftliche Gebäude
+1020412;10204;Umschwung von landwirtschaftlichen Gebäuden
+1020513;10205;Nicht spezifizierte Gebäude
+1020514;10205;Umschwung von nicht spezifizierten Gebäuden
+1030615;10306;Autobahnen
+1030616;10306;Autobahngrün
+1030617;10306;Strassen, Wege
+1030618;10306;Strassengrün
+1030619;10306;Parkplatzareal
+1030720;10307;Befestigtes Bahnareal
+1030721;10307;Bahngrün
+1030822;10308;Flugplätze
+1030823;10308;Graspisten, Flugplatzgrün
+1040924;10409;Energieversorgungsanlagen
+1040925;10409;Abwasserreinigungsanlagen
+1040926;10409;Übrige Ver- und Entsorgungsanlagen
+1040927;10409;Deponien
+1040928;10409;Abbau
+1040929;10409;Baustellen
+1040930;10409;Bau- und Siedlungsbrachen
+1051031;10510;Öffentliche Parkanlagen
+1051032;10510;Sportanlagen
+1051033;10510;Golfplätze
+1051034;10510;Campingplätze
+1051035;10510;Schrebergärten
+1051036;10510;Friedhöfe
+2061137;20611;Obstanlagen
+2061138;20611;Feldobst
+2061239;20612;Rebbauflächen
+2061340;20613;Gartenbauflächen
+2071441;20714;Ackerland
+2081542;20815;Naturwiesen
+2081643;20816;Heimweiden
+2081644;20816;Verbuschte Wiesen und Heimweiden
+2091745;20917;Alpwiesen
+2091846;20918;Günstige Alp- und Juraweiden
+2091847;20918;Verbuschte Alp- und Juraweiden
+2091848;20918;Versteinte Alp- und Juraweiden
+2091849;20918;Schafalpen
+3101950;31019;Normalwald
+3101951;31019;Schmaler Wald
+3102052;31020;Aufforstungen
+3102053;31020;Holzschläge
+3102054;31020;Waldschäden
+3102055;31020;Aufgelöster Wald (auf Landwirtschaftsflächen)
+3102056;31020;Aufgelöster Wald (auf unproduktiven Flächen)
+3112157;31121;Gebüschwald
+3122258;31222;Feldgehölze, Hecken
+3122259;31222;Baumgruppen (auf Landwirtschaftsflächen)
+3122260;31222;Baumgruppen (auf unproduktiven Flächen)
+4132361;41323;Stehende Gewässer
+4142462;41424;Wasserläufe
+4142463;41424;Hochwasserverbauungen
+4152564;41525;Gebüsch, Strauchvegetation
+4152565;41525;Unproduktive Gras- und Krautvegetation
+4152566;41525;Lawinen- und Steinschlagverbauungen
+4152567;41525;Feuchtgebiete
+4152568;41525;Alpine Sportinfrastruktur
+4162669;41626;Fels
+4162670;41626;Geröll, Sand
+4162671;41626;Landschaftseingriffe
+4172772;41727;Gletscher, Firn

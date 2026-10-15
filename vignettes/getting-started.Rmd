@@ -1,0 +1,53 @@
+---
+title: "Getting started with helvetia"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with helvetia}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+All functions download from official sources and cache the result locally,
+so the chunks below are not evaluated when the vignette is built.
+
+```{r}
+library(helvetia)
+
+gem  <- gemeinde(stand_d = as.Date("2021-01-01"))
+pop  <- pop_gemeinde(jahr_n = 2021)
+geo  <- geo_gemeinde(stand_d = as.Date("2021-01-01"))
+area <- areal_gemeinde(period_x = "2013/18", level_n = 17)
+
+# aggregate the statistics before joining them to the map
+pop_total <- aggregate(ch_n ~ gem_id, data = pop, FUN = sum)
+map <- merge(geo, pop_total, by = "gem_id", all.x = TRUE)
+plot(map["ch_n"])
+```
+
+## Time concepts
+
+| Field | Meaning |
+|---|---|
+| `stand_d` | exact date of a register or geometry stand |
+| `jahr_n` | statistical year |
+| `period_x` | multi-year survey period, e.g. `"2013/18"` |
+| `gem_stand_d` | municipality boundaries a result is reported on |
+
+A population figure for 2021 refers to the municipalities of 31.12.2021,
+the Arealstatistik 2013/18 to the boundary stand in `gem_stand_d`. Check
+which municipalities match before joining:
+
+```{r}
+setdiff(unique(pop$gem_id), gem$gem_id)
+```
+
+## Sources and cache
+
+```{r}
+source_info(area)
+cache_list()
+```
