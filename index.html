@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">helvetia</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,39 +60,94 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header">
-<img src="logo.png" class="logo" alt=""><h1 id="helvetia">helvetia<a class="anchor" aria-label="anchor" href="#helvetia"></a>
+<img src="logo.png" class="logo" alt=""><h1 id="package-helvetia-">📦 helvetia <a class="anchor" aria-label="anchor" href="#package-helvetia-"></a>
 </h1>
 </div>
-<p>Swiss municipalities, population, land use and maps from official sources (BFS, swisstopo, BAG/priminfo), with an explicit time reference, local cache and source metadata on every result.</p>
+<!-- badges: start -->
+
+<p><strong>Title:</strong> Consistent Access to Swiss Public Statistics, Regional Classifications and Spatial Data<br><strong>License:</strong> GPL (≥ 2)</p>
 <div class="section level2">
-<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+<h2 id="jigsaw-overview">🧩 Overview<a class="anchor" aria-label="anchor" href="#jigsaw-overview"></a>
+</h2>
+<p><code>helvetia</code> gives you Swiss municipal registers, population, land use, premium regions and map geometries from official sources (BFS, swisstopo, BAG/priminfo) through one consistent interface.</p>
+<p>Every result has an explicit time reference, carries its source metadata and is cached locally, so analyses stay reproducible and work offline. The package succeeds <code>bfsMaps</code>, whose map functions it has taken over.</p>
+<p>📖 <strong>Documentation:</strong> <a href="https://andrisignorell.github.io/helvetia/" class="uri">https://andrisignorell.github.io/helvetia/</a></p>
+</div>
+<div class="section level2">
+<h2 id="gear-installation">⚙️ Installation<a class="anchor" aria-label="anchor" href="#gear-installation"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"AndriSignorell/helvetia"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
-</h2>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"helvetia"</span><span class="op">)</span></span></code></pre></div>
+<p>Or the development version from GitHub:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/AndriSignorell/helvetia" class="external-link">helvetia</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">pop</span>   <span class="op">&lt;-</span> <span class="fu"><a href="reference/popGemeinde.html">popGemeinde</a></span><span class="op">(</span>year <span class="op">=</span> <span class="fl">2021</span><span class="op">)</span>          <span class="co"># STATPOP, 31.12.2021</span></span>
-<span><span class="va">stand</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">pop</span><span class="op">$</span><span class="va">gem_stand_d</span><span class="op">)</span>           <span class="co"># municipality stand of the cube</span></span>
-<span><span class="va">geo</span>   <span class="op">&lt;-</span> <span class="fu"><a href="reference/geo-boundaries.html">geoGemeinde</a></span><span class="op">(</span>date <span class="op">=</span> <span class="va">stand</span><span class="op">)</span>         <span class="co"># geometries of that stand</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/sets.html" class="external-link">setdiff</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">pop</span><span class="op">$</span><span class="va">gem_id</span><span class="op">)</span>, <span class="va">geo</span><span class="op">$</span><span class="va">gem_id</span><span class="op">)</span>    <span class="co"># check the join</span></span>
-<span></span>
-<span><span class="va">popTotal</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/aggregate.html" class="external-link">aggregate</a></span><span class="op">(</span><span class="va">ch_n</span> <span class="op">~</span> <span class="va">gem_id</span>, data <span class="op">=</span> <span class="va">pop</span>, FUN <span class="op">=</span> <span class="va">sum</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/plotMap.html">plotMap</a></span><span class="op">(</span><span class="va">geo</span>, id <span class="op">=</span> <span class="va">popTotal</span><span class="op">$</span><span class="va">gem_id</span>,</span>
-<span>        col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">6</span>, <span class="st">"Blues 3"</span>, rev <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">popTotal</span><span class="op">$</span><span class="va">ch_n</span><span class="op">)</span>, <span class="fl">6</span><span class="op">)</span><span class="op">]</span>,</span>
-<span>        border <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/addGewaesser.html">addGewaesser</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/sourceInfo.html">sourceInfo</a></span><span class="op">(</span><span class="va">pop</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"AndriSignorell/helvetia"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="time-references">Time references<a class="anchor" aria-label="anchor" href="#time-references"></a>
+<h2 id="books-core-features">📚 Core Features<a class="anchor" aria-label="anchor" href="#books-core-features"></a>
+</h2>
+<div class="section level3">
+<h3 id="small_blue_diamond-registers">🔹 Registers<a class="anchor" aria-label="anchor" href="#small_blue_diamond-registers"></a>
+</h3>
+<ul>
+<li>
+<code><a href="reference/gemeinde.html">gemeinde()</a></code>: municipalities valid on a date (AGVCH)</li>
+<li>
+<code><a href="reference/gemeindeMutationen.html">gemeindeMutationen()</a></code>: mergers, splits, renames and renumberings between two dates</li>
+<li>
+<code><a href="reference/raumgliederung.html">raumgliederung()</a></code>: spatial classifications per municipality</li>
+<li>
+<code><a href="reference/kanton.html">kanton()</a></code>: cantons with numbers, abbreviations and names</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="small_blue_diamond-statistics">🔹 Statistics<a class="anchor" aria-label="anchor" href="#small_blue_diamond-statistics"></a>
+</h3>
+<ul>
+<li>
+<code><a href="reference/popGemeinde.html">popGemeinde()</a></code>: STATPOP population by municipality, sex and age</li>
+<li>
+<code><a href="reference/arealGemeinde.html">arealGemeinde()</a></code>, <code><a href="reference/noas.html">noas()</a></code>: land use statistics (Arealstatistik) and the NOAS04 nomenclature</li>
+<li>
+<code><a href="reference/praemienregion.html">praemienregion()</a></code>: premium regions of the mandatory health insurance</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="small_blue_diamond-geometries">🔹 Geometries<a class="anchor" aria-label="anchor" href="#small_blue_diamond-geometries"></a>
+</h3>
+<ul>
+<li>
+<code><a href="reference/geo-boundaries.html">geoGemeinde()</a></code>, <code><a href="reference/geo-boundaries.html">geoBezirk()</a></code>, <code><a href="reference/geo-boundaries.html">geoKanton()</a></code>: boundaries from ThemaKart or swissBOUNDARIES3D</li>
+<li>
+<code><a href="reference/geoThemakart.html">geoThemakart()</a></code>, <code><a href="reference/themakartSets.html">themakartSets()</a></code>: any ThemaKart layer, by stand</li>
+<li>
+<code><a href="reference/geoGewaesser.html">geoGewaesser()</a></code>: lakes and rivers</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="small_blue_diamond-maps-and-spatial-tools">🔹 Maps and Spatial Tools<a class="anchor" aria-label="anchor" href="#small_blue_diamond-maps-and-spatial-tools"></a>
+</h3>
+<ul>
+<li>
+<code><a href="reference/plotMap.html">plotMap()</a></code>, <code><a href="reference/addGewaesser.html">addGewaesser()</a></code>, <code><a href="reference/stampBfs.html">stampBfs()</a></code>: thematic maps</li>
+<li>
+<code><a href="reference/combineRegions.html">combineRegions()</a></code>, <code><a href="reference/neighbours.html">neighbours()</a></code>: merging and neighbouring units</li>
+<li>
+<code><a href="reference/locate.html">locate()</a></code>, <code><a href="reference/geocode.html">geocode()</a></code>: assigning points and addresses to units</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="small_blue_diamond-sources-and-cache">🔹 Sources and Cache<a class="anchor" aria-label="anchor" href="#small_blue_diamond-sources-and-cache"></a>
+</h3>
+<ul>
+<li>
+<code><a href="reference/sourceInfo.html">sourceInfo()</a></code>: URL, download time, version and query of a result</li>
+<li>
+<code><a href="reference/cacheList.html">cacheList()</a></code>, <code><a href="reference/cacheList.html">cacheClear()</a></code>: inspecting and clearing the local cache</li>
+</ul>
+</div>
+</div>
+<div class="section level2">
+<h2 id="mantelpiece_clock-time-references">🕰️ Time References<a class="anchor" aria-label="anchor" href="#mantelpiece_clock-time-references"></a>
 </h2>
 <table class="table">
 <thead><tr>
@@ -119,54 +174,41 @@
 </tr>
 </tbody>
 </table>
-<p>The year of a statistic and the municipality stand it is reported on are different things: STATPOP counts of 2021 are published on a later municipality stand (e.g. 6 April 2025). Always join registers, statistics and geometries on the stand, never on the year alone. An unchanged BFS number does not guarantee unchanged boundaries.</p>
+<p>The year of a statistic and the municipality stand it is reported on are two different things. STATPOP counts for 2021, for instance, are published on a later municipality stand (e.g. 6 April 2025). Always join registers, statistics and geometries on the stand, never on the year alone. An unchanged BFS number does not guarantee unchanged boundaries.</p>
+<p><code>geoGemeinde(date = stand)</code> returns the most recent geometry stand on or before <code>stand</code> (ThemaKart stands are mostly 1 January), so it may be earlier than the municipality stand of the statistic. Matching ids (<code><a href="https://rdrr.io/r/base/sets.html" class="external-link">setdiff()</a></code>) do not prove spatial compatibility: compare <code>unique(geo$stand_d)</code> with <code>stand</code> and check the mutations in between with <code>gemeindeMutationen(unique(geo$stand_d), stand)</code>.</p>
 </div>
 <div class="section level2">
-<h2 id="main-functions">Main functions<a class="anchor" aria-label="anchor" href="#main-functions"></a>
+<h2 id="test_tube-example">🧪 Example<a class="anchor" aria-label="anchor" href="#test_tube-example"></a>
 </h2>
-<table class="table">
-<colgroup>
-<col width="50%">
-<col width="50%">
-</colgroup>
-<thead><tr>
-<th>Area</th>
-<th>Functions</th>
-</tr></thead>
-<tbody>
-<tr>
-<td>Registers</td>
-<td>
-<code><a href="reference/gemeinde.html">gemeinde()</a></code>, <code><a href="reference/gemeindeMutationen.html">gemeindeMutationen()</a></code>, <code><a href="reference/kanton.html">kanton()</a></code>, <code><a href="reference/raumgliederung.html">raumgliederung()</a></code>
-</td>
-</tr>
-<tr>
-<td>Statistics</td>
-<td>
-<code><a href="reference/popGemeinde.html">popGemeinde()</a></code>, <code><a href="reference/arealGemeinde.html">arealGemeinde()</a></code>, <code><a href="reference/noas.html">noas()</a></code>, <code><a href="reference/praemienregion.html">praemienregion()</a></code>
-</td>
-</tr>
-<tr>
-<td>Geometries</td>
-<td>
-<code><a href="reference/geo-boundaries.html">geoGemeinde()</a></code>, <code><a href="reference/geo-boundaries.html">geoBezirk()</a></code>, <code><a href="reference/geo-boundaries.html">geoKanton()</a></code>, <code><a href="reference/geoThemakart.html">geoThemakart()</a></code>, <code><a href="reference/geoGewaesser.html">geoGewaesser()</a></code>
-</td>
-</tr>
-<tr>
-<td>Maps</td>
-<td>
-<code><a href="reference/plotMap.html">plotMap()</a></code>, <code><a href="reference/addGewaesser.html">addGewaesser()</a></code>, <code><a href="reference/stampBfs.html">stampBfs()</a></code>, <code><a href="reference/combineRegions.html">combineRegions()</a></code>, <code><a href="reference/neighbours.html">neighbours()</a></code>, <code><a href="reference/locate.html">locate()</a></code>, <code><a href="reference/geocode.html">geocode()</a></code>
-</td>
-</tr>
-<tr>
-<td>Sources</td>
-<td>
-<code><a href="reference/sourceInfo.html">sourceInfo()</a></code>, <code><a href="reference/cacheList.html">cacheList()</a></code>, <code><a href="reference/cacheList.html">cacheClear()</a></code>, <code><a href="reference/themakartSets.html">themakartSets()</a></code>
-</td>
-</tr>
-</tbody>
-</table>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/AndriSignorell/helvetia" class="external-link">helvetia</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">pop</span>   <span class="op">&lt;-</span> <span class="fu"><a href="reference/popGemeinde.html">popGemeinde</a></span><span class="op">(</span>year <span class="op">=</span> <span class="fl">2021</span><span class="op">)</span>          <span class="co"># STATPOP, 31.12.2021</span></span>
+<span><span class="va">stand</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">pop</span><span class="op">$</span><span class="va">gem_stand_d</span><span class="op">)</span>           <span class="co"># municipality stand of the cube</span></span>
+<span><span class="va">geo</span>   <span class="op">&lt;-</span> <span class="fu"><a href="reference/geo-boundaries.html">geoGemeinde</a></span><span class="op">(</span>date <span class="op">=</span> <span class="va">stand</span><span class="op">)</span>         <span class="co"># geometries of that stand</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">geo</span><span class="op">$</span><span class="va">stand_d</span><span class="op">)</span>                        <span class="co"># geometry stand actually used</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sets.html" class="external-link">setdiff</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">pop</span><span class="op">$</span><span class="va">gem_id</span><span class="op">)</span>, <span class="va">geo</span><span class="op">$</span><span class="va">gem_id</span><span class="op">)</span>    <span class="co"># ids only, not boundaries</span></span>
+<span></span>
+<span><span class="va">popTotal</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/aggregate.html" class="external-link">aggregate</a></span><span class="op">(</span><span class="va">ch_n</span> <span class="op">~</span> <span class="va">gem_id</span>, data <span class="op">=</span> <span class="va">pop</span>, FUN <span class="op">=</span> <span class="va">sum</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/plotMap.html">plotMap</a></span><span class="op">(</span><span class="va">geo</span>, id <span class="op">=</span> <span class="va">popTotal</span><span class="op">$</span><span class="va">gem_id</span>,</span>
+<span>        col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">6</span>, <span class="st">"Blues 3"</span>, rev <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">popTotal</span><span class="op">$</span><span class="va">ch_n</span><span class="op">)</span>, <span class="fl">6</span><span class="op">)</span><span class="op">]</span>,</span>
+<span>        border <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/addGewaesser.html">addGewaesser</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/sourceInfo.html">sourceInfo</a></span><span class="op">(</span><span class="va">pop</span><span class="op">)</span></span></code></pre></div>
 <p>Data are downloaded on first use and cached in <code>tools::R_user_dir("helvetia", "cache")</code> (option <code>helvetia.cacheDir</code>).</p>
+</div>
+<div class="section level2">
+<h2 id="pray-acknowledgements">🙏 Acknowledgements<a class="anchor" aria-label="anchor" href="#pray-acknowledgements"></a>
+</h2>
+<p>The map union functions are based on code by Juerg Guggenbuehl from <code>bfsMaps</code>. The data are provided by the Swiss Federal Statistical Office (BFS), swisstopo and the Federal Office of Public Health (BAG); maps based on ThemaKart must carry the source note added by <code><a href="reference/stampBfs.html">stampBfs()</a></code>.</p>
+<p>Parts of the code and documentation were reviewed with the help of large language models (OpenAI Codex, Anthropic Claude). Every suggestion was assessed, edited and verified by the maintainer, who remains solely responsible for the content of this package.</p>
+</div>
+<div class="section level2">
+<h2 id="scroll-license">📜 License<a class="anchor" aria-label="anchor" href="#scroll-license"></a>
+</h2>
+<p>GPL (≥ 2)</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
@@ -200,7 +242,13 @@
 </ul>
 </div>
 
-
+<div class="dev-status">
+<h2 data-toc-skip>Dev status</h2>
+<ul class="list-unstyled">
+<li><a href="https://CRAN.R-project.org/package=helvetia" class="external-link"><img src="https://www.r-pkg.org/badges/version/helvetia" alt="CRAN status"></a></li>
+<li><a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html" class="external-link"><img src="https://img.shields.io/badge/License-GPL%20v2-blue.svg" alt="License: GPL v2"></a></li>
+</ul>
+</div>
 
   </aside>
 </div>

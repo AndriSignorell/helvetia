@@ -15,12 +15,12 @@ Source:
 
 Signorell A (2026). *helvetia: Consistent Access to Swiss Public
 Statistics, Regional Classifications and Spatial Data*. R package
-version 0.1.1, <https://github.com/AndriSignorell/helvetia>.
+version 0.1.2, <https://github.com/AndriSignorell/helvetia>.
 
     @Manual{,
       title = {helvetia: Consistent Access to Swiss Public Statistics, Regional Classifications and Spatial Data},
       author = {Andri Signorell},
       year = {2026},
-      note = {R package version 0.1.1},
+      note = {R package version 0.1.2},
       url = {https://github.com/AndriSignorell/helvetia},
     }

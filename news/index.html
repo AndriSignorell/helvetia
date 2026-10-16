@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">helvetia</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,9 +36,18 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.0" id="helvetia-010">helvetia 0.1.0<a class="anchor" aria-label="anchor" href="#helvetia-010"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.1.1" id="helvetia-011">helvetia 0.1.1<a class="anchor" aria-label="anchor" href="#helvetia-011"></a></h2>
 <div class="section level3">
-<h3 id="hardening-after-review-0-1-0">Hardening after review<a class="anchor" aria-label="anchor" href="#hardening-after-review-0-1-0"></a></h3>
+<h3 id="source-metadata-second-review-0-1-1">Source metadata (second review)<a class="anchor" aria-label="anchor" href="#source-metadata-second-review-0-1-1"></a></h3>
+<ul><li>
+<code><a href="../reference/popGemeinde.html">popGemeinde()</a></code>: an unreadable spatial reference gives <code>gem_stand_d = NA</code> with a warning, as documented (it used to fail in the key check). Such results and their metadata are not cached.</li>
+<li>
+<code><a href="../reference/popGemeinde.html">popGemeinde()</a></code> never labels new data with an older, unverified stand: metadata and spatial reference are cached as one unit, and if only a cached copy of the metadata is available, only year blocks cached with that stand are returned.</li>
+<li>Cached cube metadata carry a format version; entries of 0.1.0 (without spatial reference) are ignored instead of failing.</li>
+<li>Whole-number arguments reject <code>Inf</code> and values outside the integer range.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="hardening-after-the-first-review-0-1-1">Hardening after the first review<a class="anchor" aria-label="anchor" href="#hardening-after-the-first-review-0-1-1"></a></h3>
 <ul><li>
 <code><a href="../reference/popGemeinde.html">popGemeinde()</a></code> returns <code>gem_stand_d</code>, the municipality stand of the cube (“Raumbezug”), read from the BFS table page; the counts refer to 31 December of <code>jahr_n</code>, the municipalities to <code>gem_stand_d</code>. Years and ids must be whole numbers.</li>
 <li>
@@ -55,6 +64,91 @@
 <li>
 <code><a href="../reference/addGewaesser.html">addGewaesser()</a></code> follows the CRS of the last map drawn (or <code>crs</code>); <code><a href="../reference/stampBfs.html">stampBfs()</a></code> defaults to <code>"bottomright"</code>.</li>
 <li>HTTP requests use explicit timeouts (options <code>helvetia.connectTimeout</code>, <code>helvetia.timeout</code>) and retry on connection errors.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.1.0" id="helvetia-010">helvetia 0.1.0<a class="anchor" aria-label="anchor" href="#helvetia-010"></a></h2>
+<p>First version.</p>
+<ul><li>Registers: <code><a href="../reference/gemeinde.html">gemeinde()</a></code>, <code><a href="../reference/gemeindeMutationen.html">gemeindeMutationen()</a></code>, <code><a href="../reference/raumgliederung.html">raumgliederung()</a></code> (experimental), <code><a href="../reference/praemienregion.html">praemienregion()</a></code>, <code><a href="../reference/kanton.html">kanton()</a></code>.</li>
+<li>Statistics: <code><a href="../reference/popGemeinde.html">popGemeinde()</a></code>, <code><a href="../reference/arealGemeinde.html">arealGemeinde()</a></code>, <code><a href="../reference/noas.html">noas()</a></code>.</li>
+<li>Geometries: <code><a href="../reference/geo-boundaries.html">geoGemeinde()</a></code>, <code><a href="../reference/geo-boundaries.html">geoBezirk()</a></code>, <code><a href="../reference/geo-boundaries.html">geoKanton()</a></code>, <code><a href="../reference/geoThemakart.html">geoThemakart()</a></code>, <code><a href="../reference/geoGewaesser.html">geoGewaesser()</a></code>, <code><a href="../reference/themakartSets.html">themakartSets()</a></code>.</li>
+<li>Maps and spatial tools: <code><a href="../reference/plotMap.html">plotMap()</a></code>, <code><a href="../reference/addGewaesser.html">addGewaesser()</a></code>, <code><a href="../reference/stampBfs.html">stampBfs()</a></code>, <code><a href="../reference/combineRegions.html">combineRegions()</a></code>, <code><a href="../reference/neighbours.html">neighbours()</a></code>, <code><a href="../reference/locate.html">locate()</a></code>, <code><a href="../reference/geocode.html">geocode()</a></code>.</li>
+<li>Sources: <code><a href="../reference/sourceInfo.html">sourceInfo()</a></code>, <code><a href="../reference/cacheList.html">cacheList()</a></code>, <code><a href="../reference/cacheList.html">cacheClear()</a></code>.</li>
+</ul><p>Names and signatures follow the suite’s design rules (v0.7.1): lowerCamelCase functions and arguments, kebab-case enum values, one <code>@family</code> and two to four <code>@concept</code> tags per topic.</p>
+<div class="section level3">
+<h3 id="integration-of-bfsmaps-0-1-0">Integration of bfsMaps<a class="anchor" aria-label="anchor" href="#integration-of-bfsmaps-0-1-0"></a></h3>
+<p>helvetia supersedes bfsMaps (1.99.4). The ThemaKart sets are found in the BFS data catalogue and downloaded into the cache automatically; <code>DownloadBfSMaps()</code>, <code>maps.csv</code> and the option <code>bfsMaps.base</code> are no longer needed. An existing unpacked set can still be used with <code>options(helvetia.themakartDir = &lt;path&gt;, helvetia.themakartSet = &lt;year&gt;)</code>.</p>
+<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>bfsMaps</th>
+<th>helvetia</th>
+</tr></thead><tbody><tr><td>
+<code>GetMap("polg.map")</code>, <code>GetMap("kant.map")</code>, …</td>
+<td>
+<code>geoThemakart("gemeinde")</code>, <code><a href="../reference/geo-boundaries.html">geoGemeinde()</a></code>, <code><a href="../reference/geo-boundaries.html">geoKanton()</a></code>, <code><a href="../reference/geo-boundaries.html">geoBezirk()</a></code>
+</td>
+</tr><tr><td>
+<code>GetMap("kantvf.map")</code>, <code>GetMap("kant.pnt")</code>
+</td>
+<td>
+<code>geoThemakart("kanton", area = "vegetation")</code>, <code>geoThemakart("kanton", output = "point")</code>
+</td>
+</tr><tr><td>
+<code>PlotKant()</code>, <code>PlotBezk()</code>, <code>PlotPolg()</code>, <code>PlotGreg()</code>, <code>PlotMSRe()</code>, <code>PlotCH()</code>
+</td>
+<td>
+<code>plotMap("kanton", ...)</code>, <code>plotMap("grossregion", ...)</code>, <code>plotMap("schweiz")</code>
+</td>
+</tr><tr><td>
+<code>col.vf</code>, <code>border.vf</code>
+</td>
+<td><code>plotMap(vegetation = list(col = , border = ))</code></td>
+</tr><tr><td><code>tmtxt</code></td>
+<td><code>plotMap(stamp = )</code></td>
+</tr><tr><td>
+<code>AddLakes()</code>, <code>AddRivers()</code>, <code>AddWaters()</code>
+</td>
+<td>
+<code>addGewaesser(lakes = , rivers = )</code>; data via <code><a href="../reference/geoGewaesser.html">geoGewaesser()</a></code>
+</td>
+</tr><tr><td><code>BfSStamp()</code></td>
+<td><code><a href="../reference/stampBfs.html">stampBfs()</a></code></td>
+</tr><tr><td>
+<code>CombinePolygons()</code>, <code>CombineKant()</code>, <code>CombinePolg()</code>
+</td>
+<td><code>combineRegions(map, groups, id)</code></td>
+</tr><tr><td><code>PlotPremReg()</code></td>
+<td>
+<code>plotMap(combineRegions(geoGemeinde(date), preg$preg_x, preg$gem_id))</code> with <code>preg &lt;- praemienregion(year)</code>
+</td>
+</tr><tr><td><code>Neighbours()</code></td>
+<td>
+<code><a href="../reference/neighbours.html">neighbours()</a></code> (data.frame of pairs)</td>
+</tr><tr><td><code>SwissLocator()</code></td>
+<td>
+<code><a href="../reference/locate.html">locate()</a></code> (also for given coordinates)</td>
+</tr><tr><td><code>GeoCode()</code></td>
+<td><code><a href="../reference/geocode.html">geocode()</a></code></td>
+</tr><tr><td><code>d.bfsrg</code></td>
+<td>
+<code><a href="../reference/gemeinde.html">gemeinde()</a></code> + <code><a href="../reference/raumgliederung.html">raumgliederung()</a></code> for any stand; premium regions via <code><a href="../reference/praemienregion.html">praemienregion()</a></code>
+</td>
+</tr><tr><td><code>kt</code></td>
+<td><code><a href="../reference/kanton.html">kanton()</a></code></td>
+</tr><tr><td>
+<code>tkart</code> (session cache)</td>
+<td>local cache, see <code><a href="../reference/cacheList.html">cacheList()</a></code>
+</td>
+</tr><tr><td><code>PlotMapDot()</code></td>
+<td>dropped: a plain <code><a href="https://rdrr.io/r/graphics/layout.html" class="external-link">layout()</a></code> call</td>
+</tr><tr><td><code>DownloadBfSMaps()</code></td>
+<td>dropped: automatic download</td>
+</tr></tbody></table><p>Behavioural changes compared to bfsMaps:</p>
+<ul><li>Premium regions are read from the BAG files on priminfo.admin.ch for any year from 2004, instead of a fixed snapshot of 2023.</li>
+<li>
+<code><a href="../reference/stampBfs.html">stampBfs()</a></code> honours <code>cex</code> and <code>adj</code> and uses the <code>"bottomright"</code> position (both were ignored in <code>BfSStamp()</code>); the default year is the set of the last map read instead of the current year.</li>
+<li>The stand of a layer is chosen by <code>date</code> instead of a fixed file.</li>
+<li>
+<code><a href="../reference/neighbours.html">neighbours()</a></code> returns all neighbours except the unit itself; <code>Neighbours()</code> additionally dropped all members of <code>id</code>.</li>
+<li>No dependency on DescTools and httr any more.</li>
 </ul></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
