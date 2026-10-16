@@ -1,0 +1,85 @@
+# Getting started with helvetia
+
+All functions download from official sources and cache the result
+locally, so the chunks below are not evaluated when the vignette is
+built.
+
+## Time concepts
+
+Swiss municipal data have more than one time reference, and they must
+not be mixed up:
+
+| Field         | Meaning                                         |
+|---------------|-------------------------------------------------|
+| `stand_d`     | exact date of a register or geometry stand      |
+| `jahr_n`      | statistical year (reference date of the counts) |
+| `period_x`    | multi-year survey period, e.g. `"2013/18"`      |
+| `gem_stand_d` | municipality stand a result is reported on      |
+
+The STATPOP population of 2021 is counted on 31 December 2021, but the
+BFS publishes the whole series on *one* municipality stand (“Raumbezug”,
+e.g. 6 April 2025). That stand, not the year, decides which register and
+which geometries fit. The same BFS number does not guarantee the same
+boundaries.
+
+``` r
+
+library(helvetia)
+
+pop   <- popGemeinde(year = 2021)
+stand <- unique(pop$gem_stand_d)        # spatial reference of the cube
+gem   <- gemeinde(date = stand)         # register of exactly that stand
+geo   <- geoGemeinde(date = stand)      # geometries valid on that date
+
+# check the join before using it
+setdiff(unique(pop$gem_id), gem$gem_id)
+setdiff(unique(pop$gem_id), geo$gem_id)
+
+popTotal <- aggregate(ch_n ~ gem_id, data = pop, FUN = sum)
+br <- cut(log10(popTotal$ch_n), 6)
+plotMap(geo, id = popTotal$gem_id,
+        col = hcl.colors(6, "Blues 3", rev = TRUE)[br], border = NA)
+```
+
+[`geoGemeinde()`](https://andrisignorell.github.io/helvetia/reference/geo-boundaries.md)
+returns the most recent geometry stand on or before the date and reports
+by a message if it differs; ThemaKart stands are mostly 1 January.
+Compare `unique(geo$stand_d)` with `stand`, and check the mutations in
+between with `gemeindeMutationen(unique(geo$stand_d), stand)`.
+
+The Arealstatistik is reported on the stand in `gem_stand_d` as well:
+
+``` r
+
+area <- arealGemeinde(period = "2013/18", nClasses = 17)
+unique(area$gem_stand_d)
+table(attr(area, "sumCheck")$check_c)   # completeness of the class sums
+```
+
+## Thematic maps
+
+The generalised ThemaKart geometries of the BFS (formerly used through
+bfsMaps) are downloaded automatically:
+
+``` r
+
+plotMap("kanton", id = c("ZH", "BE", "TI"),
+        col = c("steelblue", "orange", "darkseagreen"), labels = TRUE)
+addGewaesser()
+
+# premium regions of the mandatory health insurance; municipalities split
+# over several regions must be resolved explicitly
+preg <- praemienregion(2026)
+preg$preg_x[preg$split_l] <- "mehrere"
+reg  <- combineRegions(geoGemeinde("2026-01-01"), preg$preg_x, preg$gem_id)
+plotMap(reg, col = hcl.colors(nrow(reg), "Set 3"), labels = TRUE)
+```
+
+## Sources and cache
+
+``` r
+
+sourceInfo(pop)        # incl. the POST selections and original download time
+sourceInfo(area)
+cacheList()
+```
