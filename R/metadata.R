@@ -3,14 +3,15 @@
 # Build the metadata record attached to every returned object.
 .sourceMeta <- function(sourceText, url, retrievedAt = Sys.time(),
                         checksum = NA_character_, version = NA_character_,
-                        notes = NULL) {
+                        query = NULL, notes = NULL) {
   structure(
     list(source      = sourceText,
          url         = url,
          retrievedAt = as.POSIXct(retrievedAt),
          checksum    = checksum,
          version     = version,
-         notes       = notes),
+         query       = query,
+         notes       = notes[!is.na(notes)]),
     class = "SourceInfo"
   )
 }
@@ -42,6 +43,8 @@
 #'     \item{`retrievedAt`}{time of the download.}
 #'     \item{`checksum`}{MD5 checksum of a downloaded file, else `NA`.}
 #'     \item{`version`}{source version, stand or period, else `NA`.}
+#'     \item{`query`}{POST selections sent to the source (PXWeb), else
+#'       `NULL`; the URL alone does not describe such a request.}
 #'     \item{`notes`}{further remarks, or `NULL`.}
 #'   }
 #'   `NULL` if `x` carries no metadata.
@@ -60,21 +63,29 @@ print.SourceInfo <- function(x, ...) {
   cat("Source:     ", x$source, "\n", sep = "")
   cat("URL:        ", paste(x$url, collapse = "\n            "), "\n",
       sep = "")
-  cat("Retrieved:  ", format(x$retrievedAt, "%Y-%m-%d %H:%M:%S %Z"), "\n",
-      sep = "")
+  cat("Retrieved:  ",
+      paste(format(x$retrievedAt, "%Y-%m-%d %H:%M:%S %Z"), collapse = ", "),
+      "\n", sep = "")
   if (!all(is.na(x$version)))
     cat("Version:    ", paste(x$version, collapse = ", "), "\n", sep = "")
   if (!all(is.na(x$checksum)))
     cat("MD5:        ", paste(x$checksum, collapse = ", "), "\n", sep = "")
+  if (length(x$query))
+    cat("Query:      ", length(x$query), " POST selection(s), see $query\n",
+        sep = "")
   for (n in x$notes) cat("Note:       ", n, "\n", sep = "")
   invisible(x)
 }
 
 
 # Error if the combination of key columns is not unique.
-.validateUniqueKey <- function(x, key, what = "result") {
+.validateUniqueKey <- function(x, key, what = "result", allowNA = NULL) {
   .requireCols(x, key, what)
   k <- as.data.frame(x)[, key, drop = FALSE]
+  na <- vapply(setdiff(key, allowNA), function(n) anyNA(k[[n]]), TRUE)
+  if (any(na))
+    stop(sprintf("Key column(s) %s of %s contain missing values.",
+                 paste(names(na)[na], collapse = ", "), what), call. = FALSE)
   dup <- duplicated(k)
   if (any(dup)) {
     ex <- head(unique(k[dup, , drop = FALSE]), 5)

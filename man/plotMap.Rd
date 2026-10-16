@@ -78,8 +78,9 @@ plotMap("kanton", id = c("ZH", "BE"), col = c("steelblue", "orange"),
 addGewaesser()
 
 # choropleth of the population by municipality
-geo <- geoGemeinde(as.Date("2021-01-01"))
-pop <- aggregate(ch_n ~ gem_id, data = popGemeinde(2021), FUN = sum)
+pop <- popGemeinde(2021)
+geo <- geoGemeinde(unique(pop$gem_stand_d))   # stand of the population cube
+pop <- aggregate(ch_n ~ gem_id, data = pop, FUN = sum)
 br  <- cut(log10(pop$ch_n), 6)
 plotMap(geo, id = pop$gem_id,
         col = hcl.colors(6, "Blues 3", rev = TRUE)[br], border = NA)

@@ -11,6 +11,7 @@ addGewaesser(
   border = "lightskyblue3",
   lwd = 1,
   setYear = NULL,
+  crs = NULL,
   ...
 )
 }
@@ -29,6 +30,10 @@ opaque variant of \code{border}.}
 \item{lwd}{line width.}
 
 \item{setYear}{ThemaKart set; by default the set of the last map read.}
+
+\item{crs}{coordinate reference system of the current plot. The default
+\code{NULL} uses the CRS of the last map drawn with \code{\link[=plotMap]{plotMap()}} (LV95 if
+there is none); give it explicitly when the map was drawn otherwise.}
 
 \item{...}{further graphical parameters passed to \code{\link[=plot]{plot()}}.}
 }

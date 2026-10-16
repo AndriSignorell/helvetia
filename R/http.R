@@ -15,16 +15,39 @@
 }
 
 
-# Perform a request with retries on 429/5xx. Returns the curl response.
+# Timeouts (seconds): connecting, and the whole transfer. Large downloads
+# (ThemaKart, swissBOUNDARIES3D) get the longer transfer limit.
+.httpTimeouts <- function(download = FALSE) {
+  list(connecttimeout = getOption("helvetia.connectTimeout", 30L),
+       timeout = getOption("helvetia.timeout", if (download) 1800L else 120L))
+}
+
+.newHandle <- function(download = FALSE, ...) {
+  h <- curl::new_handle(useragent = .userAgent(), followlocation = TRUE, ...)
+  do.call(curl::handle_setopt, c(list(h), .httpTimeouts(download)))
+  h
+}
+
+
+# Perform a request with retries on 429/5xx and on connection errors
+# (timeouts, resets). Returns the curl response.
 .http <- function(url, headers = NULL, postJson = NULL, tries = 3L) {
   for (i in seq_len(tries)) {
-    h <- curl::new_handle(useragent = .userAgent(), followlocation = TRUE)
+    h <- .newHandle()
     if (length(headers)) curl::handle_setheaders(h, .list = headers)
     if (!is.null(postJson)) {
       curl::handle_setheaders(h, "Content-Type" = "application/json")
       curl::handle_setopt(h, copypostfields = postJson)
     }
-    res <- curl::curl_fetch_memory(url, handle = h)
+    res <- tryCatch(curl::curl_fetch_memory(url, handle = h),
+                    error = function(e) e)
+    if (inherits(res, "error")) {
+      if (i == tries)
+        stop(sprintf("Connection to %s failed: %s", url,
+                     conditionMessage(res)), call. = FALSE)
+      Sys.sleep(2^i)
+      next
+    }
     if (res$status_code < 400L) return(res)
     if (!res$status_code %in% c(429L, 500L, 502L, 503L, 504L) || i == tries)
       break
@@ -57,17 +80,26 @@
 
 # Download a file and record URL, retrieval time and MD5.
 #' @importFrom tools md5sum
-.downloadChecked <- function(url, dest) {
+.downloadChecked <- function(url, dest, tries = 3L) {
   dir.create(dirname(dest), recursive = TRUE, showWarnings = FALSE)
   tmp <- paste0(dest, ".part")
   on.exit(unlink(tmp), add = TRUE)
-  h <- curl::new_handle(useragent = .userAgent(), followlocation = TRUE,
-                        failonerror = TRUE)
-  curl::curl_download(url, tmp, handle = h, quiet = !interactive())
+  for (i in seq_len(tries)) {
+    h <- .newHandle(download = TRUE, failonerror = TRUE)
+    ok <- tryCatch({
+      curl::curl_download(url, tmp, handle = h, quiet = !interactive())
+      TRUE
+    }, error = function(e) e)
+    if (isTRUE(ok)) break
+    # HTTP errors (failonerror) other than 429/5xx are not retried
+    if (i == tries || grepl("HTTP error 4(0[0-9]|1[0-9]|2[0-8])", conditionMessage(ok)))
+      stop(ok)
+    Sys.sleep(2^i)
+  }
   if (!file.exists(tmp) || file.size(tmp) == 0)
     stop(sprintf("The download of %s produced an empty file.", url),
          call. = FALSE)
-  file.rename(tmp, dest)
+  .moveFile(tmp, dest)
   list(path = dest, url = url, retrievedAt = Sys.time(),
        md5 = unname(md5sum(dest)))
 }
@@ -83,4 +115,16 @@
   }
   stop("None of the source URLs could be downloaded:\n",
        paste(errs, collapse = "\n"), call. = FALSE)
+}
+
+
+# file.rename() can fail on Windows while a virus scanner still holds the
+# new file; fall back to copying.
+.moveFile <- function(from, to) {
+  if (suppressWarnings(file.rename(from, to))) return(invisible(TRUE))
+  if (!file.copy(from, to, overwrite = TRUE))
+    stop(sprintf("The downloaded file could not be moved to %s.", to),
+         call. = FALSE)
+  unlink(from)
+  invisible(TRUE)
 }

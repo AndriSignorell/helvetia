@@ -37,7 +37,8 @@ testthat::test_local(reporter = "progress")
 devtools::run_examples()
 
 rstudioapi::restartSession()                        # Ctrl+Shift+F10; needed before install on Windows
-devtools::install(dependencies = FALSE, upgrade = "never")
+devtools::install(dependencies = FALSE, upgrade = FALSE)
+devtools::install()
 
 
 # == 2  checks ==============================================================
@@ -245,7 +246,7 @@ renameData("d.pizza", "Pizza")
 # == 8  once per machine or per package =====================================
 
 # is the name free on CRAN, GitHub, Bioconductor?
-available::available("figura", browse = FALSE)
+available::available("helvetia", browse = FALSE)
 
 usethis::use_build_ignore("dev")
 usethis::use_pkgdown_github_pages()

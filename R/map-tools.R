@@ -124,8 +124,9 @@
 #' addGewaesser()
 #'
 #' # choropleth of the population by municipality
-#' geo <- geoGemeinde(as.Date("2021-01-01"))
-#' pop <- aggregate(ch_n ~ gem_id, data = popGemeinde(2021), FUN = sum)
+#' pop <- popGemeinde(2021)
+#' geo <- geoGemeinde(unique(pop$gem_stand_d))   # stand of the population cube
+#' pop <- aggregate(ch_n ~ gem_id, data = pop, FUN = sum)
 #' br  <- cut(log10(pop$ch_n), 6)
 #' plotMap(geo, id = pop$gem_id,
 #'         col = hcl.colors(6, "Blues 3", rev = TRUE)[br], border = NA)
@@ -167,6 +168,7 @@ plotMap <- function(map, id = NULL,
   bord[idx[ok]] <- rep_len(border, length(id))[ok]
   plot(sf::st_geometry(map), col = fill, border = bord, lwd = lwd,
        add = add, ...)
+  if (!add) .helvetiaEnv$lastCrs <- sf::st_crs(map)   # for addGewaesser()
 
   if (!is.null(veg)) {
     vf <- .mapCompanion(map, area = "vegetation")
@@ -224,6 +226,9 @@ plotMap <- function(map, id = NULL,
 #' @param border colour of the rivers and the lake shores.
 #' @param lwd line width.
 #' @param setYear ThemaKart set; by default the set of the last map read.
+#' @param crs coordinate reference system of the current plot. The default
+#'   `NULL` uses the CRS of the last map drawn with [plotMap()] (LV95 if
+#'   there is none); give it explicitly when the map was drawn otherwise.
 #' @param ... further graphical parameters passed to [plot()].
 #'
 #' @return `NULL`, invisibly.
@@ -240,13 +245,14 @@ plotMap <- function(map, id = NULL,
 #' @export
 addGewaesser <- function(lakes = 1, rivers = 1:5, col = NULL,
                          border = "lightskyblue3", lwd = 1, setYear = NULL,
-                         ...) {
+                         crs = NULL, ...) {
   if (is.null(col)) col <- .lighten(border, 0.4)
+  crs <- crs %||% .helvetiaEnv$lastCrs %||% sf::st_crs(2056)
   if (length(rivers))
-    plot(sf::st_geometry(geoGewaesser("fluss", rivers, setYear)),
+    plot(sf::st_geometry(geoGewaesser("fluss", rivers, setYear, crs = crs)),
          col = border, lwd = lwd, add = TRUE, ...)
   if (length(lakes))
-    plot(sf::st_geometry(geoGewaesser("see", lakes, setYear)),
+    plot(sf::st_geometry(geoGewaesser("see", lakes, setYear, crs = crs)),
          col = col, border = border, lwd = lwd, add = TRUE, ...)
   invisible(NULL)
 }
@@ -266,9 +272,9 @@ addGewaesser <- function(lakes = 1, rivers = 1:5, col = NULL,
 #' into the current plot. The note is mandatory for published maps based on
 #' the BFS ThemaKart geometries; [plotMap()] adds it by default.
 #'
-#' @param x position of the text: `NULL` for the lower right corner of a
-#'   map of Switzerland in LV95, `"bottomright"` for the lower right corner
-#'   of the plot region, or an x coordinate.
+#' @param x position of the text: `"bottomright"` (default, also for
+#'   `NULL`) for the lower right corner of the plot region, which works in
+#'   any CRS, or an x coordinate in the CRS of the plot.
 #' @param y y coordinate if `x` is numeric.
 #' @param year year of the ThemaKart set. By default the set of the last
 #'   map read, else the current year.
@@ -289,16 +295,13 @@ addGewaesser <- function(lakes = 1, rivers = 1:5, col = NULL,
 #' stampBfs()
 #' }
 #' @export
-stampBfs <- function(x = NULL, y = NULL, year = NULL, text = NULL,
+stampBfs <- function(x = "bottomright", y = NULL, year = NULL, text = NULL,
                      cex = 0.6, adj = c(1, 0), ...) {
   year <- .asYear(year) %||% .helvetiaEnv$lastSet %||%
     as.integer(format(Sys.Date(), "%Y"))
   if (is.null(text))
     text <- sprintf("Kartengrundlage:\n\u00a9 BFS, ThemaKart, %s", year)
-  if (is.null(x)) {
-    x <- 2835000
-    y <- 1075000
-  } else if (identical(x, "bottomright")) {
+  if (is.null(x) || identical(x, "bottomright")) {
     usr <- par("usr")
     x <- usr[2L] - cex * strwidth("m")
     y <- usr[3L] + cex * strheight("m")
@@ -320,7 +323,11 @@ stampBfs <- function(x = NULL, y = NULL, year = NULL, text = NULL,
 #' @param groups grouping, along the rows of `map` or, if `id` is given,
 #'   along `id`; units with `NA` are left out.
 #' @param id optional ids of the units `groups` refers to, cantons also by
-#'   abbreviation.
+#'   abbreviation. An id may occur repeatedly only with the same group
+#'   (such duplicates are dropped); an id assigned to different groups is an
+#'   error, as a unit cannot be part of two regions. Resolve such units
+#'   explicitly before, e.g. the municipalities split over several premium
+#'   regions (`split_l` in [praemienregion()]).
 #'
 #' @return An `sf` object with one row per group: the column `groups`
 #'   (sorted) and the unioned geometry.
@@ -336,6 +343,8 @@ stampBfs <- function(x = NULL, y = NULL, year = NULL, text = NULL,
 #' \dontrun{
 #' preg <- praemienregion(2023)
 #' geo  <- geoGemeinde(as.Date("2023-01-01"))
+#' # municipalities split over several regions: own group "mehrere"
+#' preg$preg_x[preg$split_l] <- "mehrere"
 #' reg  <- combineRegions(geo, preg$preg_x, id = preg$gem_id)
 #' plotMap(reg)
 #' }
@@ -348,6 +357,15 @@ combineRegions <- function(map, groups, id = NULL) {
     if (length(id) != length(groups))
       stop("Arguments 'id' and 'groups' must have the same length.",
            call. = FALSE)
+    u <- !duplicated(data.frame(id = id, groups = groups))
+    id <- id[u]
+    groups <- groups[u]
+    if (anyDuplicated(id)) {
+      bad <- unique(id[duplicated(id)])
+      stop(sprintf(paste("Argument 'groups': unit(s) %s assigned to more",
+                         "than one group; resolve them explicitly."),
+                   paste(head(bad, 10), collapse = ", ")), call. = FALSE)
+    }
     groups <- groups[match(map[[key]], id)]
   }
   if (length(groups) != nrow(map))
@@ -411,9 +429,15 @@ neighbours <- function(map, id = NULL) {
 #'   plot with [locator()]; finish with Esc or a right click.
 #' @param map an `sf` object; `NULL` uses [geoGemeinde()].
 #' @param nPoints maximum number of points to click.
+#' @param multiple rule for points in more than one unit, i.e. on a common
+#'   boundary or in overlapping units: `"first"` takes the first unit in
+#'   the row order of `map`, `"na"` assigns none, `"error"` stops.
 #'
-#' @return A data.frame with `x`, `y` and the attributes of the unit
-#'   containing each point (`NA` outside all units).
+#' @return A data.frame with one row per point, in input order: `x`, `y`,
+#'   `n_treffer_n` (number of units containing the point) and the
+#'   attributes of the assigned unit. Points outside all units and points
+#'   with missing coordinates (e.g. failed [geocode()] matches) get `NA`
+#'   attributes; the latter have `n_treffer_n = NA`.
 #'
 #' @family swiss.spatial
 #' @concept spatial-data
@@ -426,7 +450,9 @@ neighbours <- function(map, id = NULL) {
 #' locate()
 #' }
 #' @export
-locate <- function(x = NULL, y = NULL, map = NULL, nPoints = 512) {
+locate <- function(x = NULL, y = NULL, map = NULL, nPoints = 512,
+                   multiple = c("first", "na", "error")) {
+  multiple <- match.arg(multiple)
   if (is.null(map)) map <- geoGemeinde()
   .checkMap(map)
   if (is.null(x)) {
@@ -438,8 +464,25 @@ locate <- function(x = NULL, y = NULL, map = NULL, nPoints = 512) {
   }
   xy <- xy.coords(x, y)
   pts <- data.frame(x = xy$x, y = xy$y)
-  geom <- sf::st_as_sf(pts, coords = c("x", "y"), crs = sf::st_crs(map))
-  hit <- sf::st_intersects(geom, map)
-  i <- vapply(hit, function(h) if (length(h)) h[1L] else NA_integer_, 0L)
-  .resetRownames(cbind(pts, sf::st_drop_geometry(map)[i, , drop = FALSE]))
+  ok <- !is.na(pts$x) & !is.na(pts$y)
+  n <- rep(NA_integer_, nrow(pts))
+  i <- rep(NA_integer_, nrow(pts))
+  if (any(ok)) {
+    geom <- sf::st_as_sf(pts[ok, , drop = FALSE], coords = c("x", "y"),
+                         crs = sf::st_crs(map))
+    hit <- sf::st_intersects(geom, map)
+    n[ok] <- lengths(hit)
+    i[ok] <- vapply(hit, function(h) if (length(h)) h[1L] else NA_integer_,
+                    0L)
+  }
+  amb <- which(n > 1L)
+  if (length(amb)) {
+    if (multiple == "error")
+      stop(sprintf(paste("Argument 'multiple': point(s) %s lie in more than",
+                         "one unit."), paste(head(amb, 10), collapse = ", ")),
+           call. = FALSE)
+    if (multiple == "na") i[amb] <- NA_integer_
+  }
+  .resetRownames(cbind(pts, n_treffer_n = n,
+                       sf::st_drop_geometry(map)[i, , drop = FALSE]))
 }

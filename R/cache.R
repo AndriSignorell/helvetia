@@ -84,7 +84,7 @@
 #' @export
 cacheList <- function(source = NULL) {
   root <- .cacheDir()
-  dir <- if (is.null(source)) root else file.path(root, source)
+  dir <- .cacheSourceDir(source)
   files <- list.files(dir, pattern = "\\.rds$", recursive = TRUE,
                       full.names = TRUE)
   if (!length(files))
@@ -105,10 +105,32 @@ cacheList <- function(source = NULL) {
 #' @rdname cacheList
 #' @export
 cacheClear <- function(source = NULL) {
-  root <- .cacheDir()
-  dir <- if (is.null(source)) root else file.path(root, source)
+  root <- normalizePath(.cacheDir(), winslash = "/", mustWork = FALSE)
+  dir <- .cacheSourceDir(source)
   files <- list.files(dir, recursive = TRUE, full.names = TRUE)
+  files <- normalizePath(files, winslash = "/", mustWork = FALSE)
+  inside <- startsWith(files, paste0(root, "/"))
+  if (!all(inside))
+    stop("Refusing to remove files outside the cache directory.",
+         call. = FALSE)
   n <- sum(file.remove(files))
   message(sprintf("%d cached file(s) removed.", n))
   invisible(n)
+}
+
+
+# The cache sources; cacheList()/cacheClear() accept only these names, so a
+# value like "../x" can never address a directory outside the cache.
+.cacheSources <- c("agvch", "pxweb", "sdmx", "area", "geometry", "themakart",
+                   "priminfo")
+
+.cacheSourceDir <- function(source) {
+  root <- .cacheDir()
+  if (is.null(source)) return(root)
+  if (!is.character(source) || length(source) != 1L || is.na(source) ||
+      !source %in% .cacheSources)
+    stop(sprintf("Argument 'source' must be NULL or one of %s.",
+                 paste(sprintf("\"%s\"", .cacheSources), collapse = ", ")),
+         call. = FALSE)
+  file.path(root, source)
 }

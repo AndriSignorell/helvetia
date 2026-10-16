@@ -26,10 +26,10 @@
 #' municipalities and localities valid in that year; join it with
 #' municipality data of the same stand.
 #'
-#' The layout of the files is not formally documented. Columns are found by
-#' their headers (BFS number, region, canton, municipality, postcode,
-#' locality), not by position; a change of the layout is an error naming
-#' the headers found. Where the regions follow locality rather than
+#' The data are read from the sheet `A_COM` of the file (other sheets
+#' hold information and mutations). Columns are found by their headers (BFS
+#' number, region, canton, municipality, postcode, locality), not by
+#' position; a change of the layout is an error naming the headers found. Where the regions follow locality rather than
 #' municipality boundaries, a municipality can lie in two regions; it then
 #' appears once per region with `split_l = TRUE`.
 #'
@@ -95,39 +95,50 @@ praemienregion <- function(year = NULL, output = c("gemeinde", "ortschaft"),
 }
 
 
-# Find the header row and the columns by name; returns the delivered rows.
+# Find the data sheet, its header row and the columns by name; returns the
+# delivered rows. The files carry information and mutation sheets besides
+# the data; since 2024 at least the data are in sheet "A_COM", with a
+# bilingual header ("BFS-Nr.\nNo OFS", "Region\nRegion", ...) below a few
+# lines of text. Other sheets are searched only as a fallback, for older
+# layouts.
 .parsePriminfo <- function(path, year) {
   sheets <- readxl::excel_sheets(path)
+  sheets <- c(sheets[toupper(sheets) == "A_COM"],
+              sheets[toupper(sheets) != "A_COM"])
+  hdr <- NA_integer_
   for (sh in sheets) {
     raw <- suppressMessages(readxl::read_excel(
       path, sheet = sh, col_names = FALSE, col_types = "text",
       .name_repair = "minimal"))
-    hdr <- .findHeaderRow(raw, c("bfs", "region"))
+    hdr <- .findHeaderRow(raw, c("bfs|ofs", "region|r\u00e9gion",
+                                 "gemeinde|commune"))
     if (!is.na(hdr)) break
   }
   if (is.na(hdr))
     stop(sprintf(paste("No sheet of the premium region file %d has a header",
-                       "row with a BFS number and a region column."), year),
-         call. = FALSE)
+                       "row with BFS number, region and municipality",
+                       "columns."), year), call. = FALSE)
 
   heads <- tolower(trimws(as.character(unlist(raw[hdr, ]))))
+  heads[is.na(heads)] <- ""
   body <- as.data.frame(raw[-seq_len(hdr), ], stringsAsFactors = FALSE)
   col <- function(pattern, required = FALSE) {
     j <- grep(pattern, heads)
     if (!length(j) && required)
-      stop(sprintf(paste("Column matching '%s' not found in the premium",
-                         "region file %d; headers: %s."),
-                   pattern, year, paste(heads, collapse = ", ")),
+      stop(sprintf(paste("Column matching '%s' not found in sheet '%s' of",
+                         "the premium region file %d; headers: %s."),
+                   pattern, sh, year, paste(heads, collapse = ", ")),
            call. = FALSE)
     if (length(j)) body[[j[1L]]] else NULL
   }
 
-  gemId <- .asInt(gsub("[^0-9]", "", col("bfs", required = TRUE)))
-  region <- .asInt(gsub("[^0-9]", "", col("region", required = TRUE)))
+  gemId <- .asInt(gsub("[^0-9]", "", col("bfs|ofs", required = TRUE)))
+  region <- .asInt(gsub("[^0-9]", "", col("^region|^r\u00e9gion",
+                                          required = TRUE)))
   canton <- .priminfoCanton(col("kanton|canton"))
   name <- col("gemeinde|commune")
-  plz <- col("plz|npa|postleit")
-  ort <- col("ortschaft|localit|^ort")
+  plz <- col("plz|npa")
+  ort <- col("^ort|localit")
 
   ok <- !is.na(gemId) & !is.na(region)
   out <- data.frame(jahr_n = rep(year, sum(ok)), gem_id = gemId[ok],
@@ -143,19 +154,27 @@ praemienregion <- function(year = NULL, output = c("gemeinde", "ortschaft"),
   if (anyNA(out$kanton_c))
     warning(sprintf("Canton missing for %d row(s) of the premium region file.",
                     sum(is.na(out$kanton_c))), call. = FALSE)
+  if (any(!out$preg_c %in% 0:3))
+    warning("Premium regions outside 0-3 in the premium region file.",
+            call. = FALSE)
   out$preg_x <- paste0(out$kanton_c, out$preg_c)
   .resetRownames(out[order(out$gem_id), , drop = FALSE])
 }
 
 
-# First row (of the first 30) containing all patterns, else NA.
-.findHeaderRow <- function(raw, patterns) {
+# First row (of the first 30) in which every pattern is matched by its own
+# short cell; a sentence mentioning several of the terms is no header.
+.findHeaderRow <- function(raw, patterns, maxChar = 40L) {
   n <- min(nrow(raw), 30L)
   for (i in seq_len(n)) {
     cells <- tolower(as.character(unlist(raw[i, ])))
-    cells <- cells[!is.na(cells)]
-    if (all(vapply(patterns, function(p) any(grepl(p, cells)), TRUE)))
-      return(i)
+    cells <- cells[!is.na(cells) & nchar(cells) <= maxChar]
+    if (length(cells) < length(patterns)) next
+    hit <- vapply(patterns, function(p) {
+      j <- grep(p, cells)
+      if (length(j)) j[1L] else NA_integer_
+    }, 1L)
+    if (!anyNA(hit) && !anyDuplicated(hit)) return(i)
   }
   NA_integer_
 }

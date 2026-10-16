@@ -13,11 +13,11 @@ popGemeinde(
 )
 }
 \arguments{
-\item{year}{integer vector of statistical years. The default \code{NULL} uses
-the most recent year available.}
+\item{year}{vector of statistical years (whole numbers). The default
+\code{NULL} uses the most recent year available.}
 
-\item{id}{optional integer vector of BFS municipality numbers to keep;
-\code{NULL} returns all municipalities.}
+\item{id}{optional vector of BFS municipality numbers (whole numbers) to
+keep; \code{NULL} returns all municipalities.}
 
 \item{population}{population type, \code{"permanent"} (ständige
 Wohnbevölkerung) or \code{"non-permanent"} (nichtständige
@@ -30,14 +30,14 @@ local cache (see \code{\link[=cacheList]{cacheList()}}).}
 cached copy exists.}
 }
 \value{
-A data.frame with the columns \code{jahr_n}, \code{gem_id}, \code{sex_c}
-(\code{"m"}, \code{"w"}), \code{age_n}, \code{age_open_l} and \code{ch_n} (number of persons).
-The key is \code{jahr_n} + \code{gem_id} + \code{sex_c} + \code{age_n}. Municipality numbers
-refer to the municipality stock of 31 December of the respective year.
+A data.frame with the columns \code{jahr_n}, \code{gem_stand_d}, \code{gem_id},
+\code{sex_c} (\code{"m"}, \code{"w"}), \code{age_n}, \code{age_open_l} and \code{ch_n} (number of
+persons). The key is \code{jahr_n} + \code{gem_stand_d} + \code{gem_id} + \code{sex_c} +
+\code{age_n}.
 }
 \description{
-Returns the permanent (or non-permanent) resident population at the end
-of the year by municipality, sex and single year of age, from the BFS
+Returns the permanent (or non-permanent) resident population on 31
+December by municipality, sex and single year of age, from the BFS
 population statistics STATPOP. It is the standard denominator for rates
 per municipality and the basis for age-standardisation.
 }
@@ -50,14 +50,29 @@ and sex is mapped explicitly (\code{1 = "m"}, \code{2 = "w"}). The open top age
 class ("100 Jahre und mehr") is kept as \code{age_n = 100} and flagged with
 \code{age_open_l = TRUE}; it must not be read as the exact age 100.
 
+\strong{Spatial reference.} The reference date of the counts (31 December,
+\code{jahr_n}) and the municipality stand of the cube are two different
+things. The BFS publishes the whole time series on \emph{one} municipality
+stand (e.g. "Raumbezug: Gemeinden / 06.04.2025"), not on the stand of the
+respective year. That stand is read from the table page and returned in
+\code{gem_stand_d}; join geometries and registers of that stand, e.g.
+\code{geoGemeinde(unique(pop$gem_stand_d))}. If the page cannot be read,
+\code{gem_stand_d} is \code{NA} and a warning is given. An unchanged BFS number does
+not guarantee unchanged boundaries, so always join on the stand, not on
+the year.
+
 Large requests are split automatically to respect the cell limit of the
-API. Each year is cached for the whole of Switzerland; \code{id} only filters
-the result. Cells the source marks as unavailable are \code{NA}.
+API. Each year is cached for the whole of Switzerland and per spatial
+reference; \code{id} only filters the result. Cells the source marks as
+unavailable are \code{NA}. \code{\link[=sourceInfo]{sourceInfo()}} keeps the POST selections and the
+time of the original download of each year.
 }
 \examples{
 \dontrun{
 pop <- popGemeinde(year = 2021)
-aggregate(ch_n ~ gem_id, data = pop, FUN = sum)
+unique(pop$gem_stand_d)               # spatial reference of the cube
+popTotal <- aggregate(ch_n ~ gem_id, data = pop, FUN = sum)
+geo <- geoGemeinde(unique(pop$gem_stand_d))
 }
 }
 \seealso{

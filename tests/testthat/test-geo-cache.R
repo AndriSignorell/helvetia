@@ -50,17 +50,42 @@ test_that("cache: hit, refresh, offline fallback, cache = FALSE", {
   withr::local_options(helvetia.cacheDir = withr::local_tempdir())
   n <- 0
   f <- function() { n <<- n + 1; n }
-  expect_identical(helvetia:::.cached("t", "v", "k", f), 1)
-  expect_identical(helvetia:::.cached("t", "v", "k", f), 1)            # hit
-  expect_identical(helvetia:::.cached("t", "v", "k", f, refresh = TRUE), 2)
+  expect_identical(helvetia:::.cached("agvch", "v", "k", f), 1)
+  expect_identical(helvetia:::.cached("agvch", "v", "k", f), 1)            # hit
+  expect_identical(helvetia:::.cached("agvch", "v", "k", f, refresh = TRUE), 2)
   expect_warning(
-    r <- helvetia:::.cached("t", "v", "k", function() stop("offline"),
+    r <- helvetia:::.cached("agvch", "v", "k", function() stop("offline"),
                             refresh = TRUE), "cached copy")
   expect_identical(r, 2)
-  expect_identical(helvetia:::.cached("t", "v", "k2", f, cache = FALSE), 3)
-  expect_false(file.exists(helvetia:::.cachePath("t", "v", "k2")))
-  expect_identical(nrow(cacheList("t")), 1L)
-  expect_message(cacheClear("t"), "1 cached")
+  expect_identical(helvetia:::.cached("agvch", "v", "k2", f, cache = FALSE), 3)
+  expect_false(file.exists(helvetia:::.cachePath("agvch", "v", "k2")))
+  expect_identical(nrow(cacheList("agvch")), 1L)
+  expect_message(cacheClear("agvch"), "1 cached")
+})
+
+test_that("cacheClear() and cacheList() accept only known sources", {
+  root <- withr::local_tempdir()
+  cache <- file.path(root, "cache")
+  dir.create(file.path(cache, "agvch"), recursive = TRUE)
+  outside <- file.path(root, "keep.txt")
+  writeLines("x", outside)
+  withr::local_options(helvetia.cacheDir = cache)
+  for (bad in list("..", "../", "agvch/..", "/", "x", c("agvch", "pxweb"), NA, 1))
+    expect_error(cacheClear(bad), "'source'")
+  expect_error(cacheList(".."), "'source'")
+  expect_true(file.exists(outside))
+  expect_message(cacheClear("agvch"), "0 cached")
+})
+
+test_that("connection errors are retried, then reported", {
+  n <- 0L
+  local_mocked_bindings(curl_fetch_memory = function(url, handle) {
+    n <<- n + 1L
+    stop("Timeout was reached")
+  }, .package = "curl")
+  expect_error(helvetia:::.http("https://example.org", tries = 2L),
+               "Connection to")
+  expect_identical(n, 2L)
 })
 
 test_that("source metadata is attached and printable", {
@@ -73,6 +98,7 @@ test_that("source metadata is attached and printable", {
 test_that("live: geoGemeinde()", {
   skip_if_not_live()
   skip_on_cran()
+  local_no_themakart_dir()
   g <- geoGemeinde(as.Date("2021-01-01"))
   expect_gt(nrow(g), 2000)
   expect_identical(sf::st_crs(g)$epsg, 2056L)

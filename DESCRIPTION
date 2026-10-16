@@ -21,7 +21,7 @@ Description: Standardised access to official Swiss municipality registers
     explicit reference dates, validated keys, local caching and source
     metadata.
 License: GPL (>= 2)
-URL: https://github.com/AndriSignorell/helvetia
+URL: https://github.com/AndriSignorell/helvetia, https://andrisignorell.github.io/helvetia/
 BugReports: https://github.com/AndriSignorell/helvetia/issues
 Depends: R (>= 4.1.0)
 Imports: curl, graphics, grDevices, jsonlite, readxl, sf, stats, tools,
@@ -33,7 +33,7 @@ Encoding: UTF-8
 Language: en-GB
 Roxygen: list(markdown = TRUE)
 NeedsCompilation: no
-Packaged: 2026-10-16 07:12:13 UTC; root
+Packaged: 2026-10-16 09:23:22 UTC; root
 Author: Andri Signorell [aut, cre] (<https://orcid.org/0000-0003-4311-1969>),
   Juerg Guggenbuehl [ctb] (map union functions, from bfsMaps)
 Maintainer: Andri Signorell <andri@signorell.net>

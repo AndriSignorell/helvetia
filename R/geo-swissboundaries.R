@@ -14,7 +14,8 @@
     dl <- .downloadChecked(item$href, file.path(dir, basename(item$href)))
     on.exit(unlink(c(dl$path, file.path(dir, "unzipped")), recursive = TRUE),
             add = TRUE)
-    files <- unzip(dl$path, exdir = file.path(dir, "unzipped"))
+    files <- unzip(dl$path, exdir = file.path(dir, "unzipped"),
+                   junkpaths = TRUE)
     gpkg <- grep("\\.gpkg$", files, value = TRUE)
     if (length(gpkg) != 1L)
       stop("Expected exactly one GeoPackage in ", basename(item$href), ".",

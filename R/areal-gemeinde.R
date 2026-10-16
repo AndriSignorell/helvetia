@@ -20,7 +20,16 @@
 #'
 #' With `checkSums = TRUE` the sum over the classes of the requested level
 #' is compared, per municipality, with the sum over the four main domains;
-#' differences above `threshold` hectares raise a warning.
+#' differences above `threshold` hectares raise a warning. A sum is only
+#' checkable if all its values are present: municipalities with a missing
+#' or suppressed class or domain are reported as not checkable instead of
+#' being compared on incomplete sums. The outcome per municipality is kept
+#' in the attribute `"sumCheck"` (columns `gem_id`, `check_c` with
+#' `"ok"`, `"difference"`, `"not-checkable"`, and `diff_ha`).
+#'
+#' Results are cached per period, level and region codelist (i.e.
+#' municipality stand) of the source, so a new municipality stand of the
+#' dataflow is never served from an older cached copy.
 #'
 #' @param period survey period, e.g. `"2013/18"`. The default `NULL` uses
 #'   the most recent period; note that a period still in progress covers only
@@ -65,7 +74,8 @@ arealGemeinde <- function(period = NULL, nClasses = 17, checkSums = TRUE,
   per <- .areaPeriod(st$periods, period)
   nom <- noas(c(4L, nClasses), cache = cache, refresh = refresh)
 
-  out <- .cached("area", per$x, c("level", nClasses), cache = cache,
+  out <- .cached("area", per$x,
+                 c("level", nClasses, st$regionCodelist), cache = cache,
                  refresh = refresh, fetch = function() {
     key <- list(NOAS = nom$noas_c, PERIOD = per$code)
     raw <- .sdmxData(.areaFlow, key, st$dims$id)
@@ -79,11 +89,15 @@ arealGemeinde <- function(period = NULL, nClasses = 17, checkSums = TRUE,
   dom <- out[out$noas_c %in% nom$noas_c[nom$level_n == 4L], , drop = FALSE]
   res <- out[out$noas_c %in% nom$noas_c[nom$level_n == nClasses], ,
              drop = FALSE]
-  if (checkSums && nClasses != 4L) .checkAreaSums(res, dom, threshold)
+  if (checkSums && nClasses != 4L)
+    attr(res, "sumCheck") <- .checkAreaSums(res, dom, threshold)
 
   .validateUniqueKey(res, c("period_x", "gem_stand_d", "gem_id", "noas_c"),
                      "arealGemeinde()")
-  .attachSourceMetadata(.resetRownames(res), sourceInfo(out))
+  sc <- attr(res, "sumCheck")
+  res <- .attachSourceMetadata(.resetRownames(res), sourceInfo(out))
+  attr(res, "sumCheck") <- sc
+  res
 }
 
 
@@ -156,6 +170,20 @@ arealGemeinde <- function(period = NULL, nClasses = 17, checkSums = TRUE,
     stop(paste("The Arealstatistik response contains no municipality-level",
                "regions; the region coding may have changed."), call. = FALSE)
 
+  # one observation per municipality, class and period; match() below
+  # would otherwise silently take the first of several raw rows
+  k <- paste(raw$gem_id, raw$NOAS, raw$PERIOD)
+  if (anyDuplicated(k))
+    stop(sprintf(paste("The Arealstatistik response holds %d duplicated",
+                       "observation(s) (municipality, class, period), e.g.",
+                       "%s; the region coding may have changed."),
+                 sum(duplicated(k)),
+                 paste(head(unique(k[duplicated(k)]), 5), collapse = "; ")),
+         call. = FALSE)
+  if (length(unique(raw$PERIOD)) > 1L)
+    stop("The Arealstatistik response holds more than one period.",
+         call. = FALSE)
+
   # complete grid: one row per municipality and requested class
   grid <- expand.grid(noas_c = nom$noas_c, gem_id = sort(unique(raw$gem_id)),
                       stringsAsFactors = FALSE)
@@ -190,16 +218,29 @@ arealGemeinde <- function(period = NULL, nClasses = 17, checkSums = TRUE,
 
 
 .checkAreaSums <- function(res, dom, threshold) {
-  sumLevel <- tapply(res$area_ha, res$gem_id, sum, na.rm = TRUE)
-  sumDomain <- tapply(dom$area_ha, dom$gem_id, sum, na.rm = TRUE)
-  ids <- intersect(names(sumLevel), names(sumDomain))
-  d <- abs(sumLevel[ids] - sumDomain[ids])
-  bad <- ids[d > threshold]
+  ids <- sort(unique(c(res$gem_id, dom$gem_id)))
+  sumOf <- function(d) {
+    v <- tapply(d$area_ha, factor(d$gem_id, levels = ids), sum)  # NA if any NA
+    v[is.na(v)] <- NA_real_
+    v
+  }
+  d <- abs(as.numeric(sumOf(res)) - as.numeric(sumOf(dom)))
+  check <- ifelse(is.na(d), "not-checkable",
+                  ifelse(d > threshold, "difference", "ok"))
+  out <- data.frame(gem_id = ids, check_c = check, diff_ha = d)
+  bad <- ids[check == "difference"]
   if (length(bad))
     warning(sprintf(paste("Class sums differ from the main-domain total by",
                           "more than %g ha in %d municipalities, e.g. %s."),
                     threshold, length(bad),
                     paste(head(bad, 10), collapse = ", ")),
             call. = FALSE)
-  invisible(bad)
+  nc <- ids[check == "not-checkable"]
+  if (length(nc))
+    warning(sprintf(paste("Class sums could not be checked for %d",
+                          "municipalities with missing or suppressed values,",
+                          "e.g. %s; see attr(, \"sumCheck\")."),
+                    length(nc), paste(head(nc, 10), collapse = ", ")),
+            call. = FALSE)
+  out
 }

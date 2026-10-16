@@ -58,11 +58,16 @@ official basis for statistical maps of Switzerland: small, fast to draw
 and available for many spatial units besides the institutional ones.
 }
 \details{
-A set is downloaded once (about 12 MB) and kept unpacked in the cache.
-Within a set, the layer with the most recent stand on or before \code{date}
-is used; its stand is returned in \code{stand_d} and reported by a message if
-it differs from \code{date}. Without \code{setYear} the set of the year of \code{date}
-is used if published, otherwise the most recent set. To use an already
+A set is downloaded once (about 12 MB) as zip archive into the cache and
+read from the archive in place, without unpacking. \code{refresh = TRUE}
+downloads it anew and replaces the cached archive only after the new one
+has been verified; on failure the cached set is kept with a warning.
+A set holds the geometries of its own stand (and possibly a few older
+ones). Without \code{setYear}, the sets are searched for the most recent stand
+on or before \code{date}: first the set of the year of \code{date}, then the newer
+sets, then the older ones; each set searched is downloaded once. Without
+\code{date} the most recent set is used. The stand found is returned in
+\code{stand_d} and reported by a message if it differs from \code{date}. To use an already
 unpacked set, e.g. from a former bfsMaps installation, set
 \verb{options(helvetia.themakartDir = <path>)} and optionally
 \verb{options(helvetia.themakartSet = <year>)}.

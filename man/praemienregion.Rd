@@ -47,10 +47,10 @@ differentiation have region \code{0}. The file of a year lists the
 municipalities and localities valid in that year; join it with
 municipality data of the same stand.
 
-The layout of the files is not formally documented. Columns are found by
-their headers (BFS number, region, canton, municipality, postcode,
-locality), not by position; a change of the layout is an error naming
-the headers found. Where the regions follow locality rather than
+The data are read from the sheet \code{A_COM} of the file (other sheets
+hold information and mutations). Columns are found by their headers (BFS
+number, region, canton, municipality, postcode, locality), not by
+position; a change of the layout is an error naming the headers found. Where the regions follow locality rather than
 municipality boundaries, a municipality can lie in two regions; it then
 appears once per region with \code{split_l = TRUE}.
 }

@@ -60,7 +60,16 @@ The raw SDMX observation status is kept in \code{obs_status_c}.
 
 With \code{checkSums = TRUE} the sum over the classes of the requested level
 is compared, per municipality, with the sum over the four main domains;
-differences above \code{threshold} hectares raise a warning.
+differences above \code{threshold} hectares raise a warning. A sum is only
+checkable if all its values are present: municipalities with a missing
+or suppressed class or domain are reported as not checkable instead of
+being compared on incomplete sums. The outcome per municipality is kept
+in the attribute \code{"sumCheck"} (columns \code{gem_id}, \code{check_c} with
+\code{"ok"}, \code{"difference"}, \code{"not-checkable"}, and \code{diff_ha}).
+
+Results are cached per period, level and region codelist (i.e.
+municipality stand) of the source, so a new municipality stand of the
+dataflow is never served from an older cached copy.
 }
 \examples{
 \dontrun{

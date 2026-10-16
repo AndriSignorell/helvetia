@@ -22,7 +22,7 @@ to one historicisable data model. The functions fall into six groups:
 
 \strong{Statistics} -- values per municipality:\tabular{lll}{
    Function \tab Purpose \tab Key \cr
-   \code{\link[=popGemeinde]{popGemeinde()}} \tab population by sex and age (STATPOP) \tab \code{jahr_n} + \code{gem_id} + \code{sex_c} + \code{age_n} \cr
+   \code{\link[=popGemeinde]{popGemeinde()}} \tab population by sex and age (STATPOP) \tab \code{jahr_n} + \code{gem_stand_d} + \code{gem_id} + \code{sex_c} + \code{age_n} \cr
    \code{\link[=arealGemeinde]{arealGemeinde()}} \tab land use (Arealstatistik) \tab \code{period_x} + \code{gem_stand_d} + \code{gem_id} + \code{noas_c} \cr
    \code{\link[=noas]{noas()}} \tab NOAS04 nomenclature \tab \code{noas_c} \cr
 }

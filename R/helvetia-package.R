@@ -19,7 +19,7 @@
 #'
 #' | Function | Purpose | Key |
 #' |---|---|---|
-#' | [popGemeinde()] | population by sex and age (STATPOP) | `jahr_n` + `gem_id` + `sex_c` + `age_n` |
+#' | [popGemeinde()] | population by sex and age (STATPOP) | `jahr_n` + `gem_stand_d` + `gem_id` + `sex_c` + `age_n` |
 #' | [arealGemeinde()] | land use (Arealstatistik) | `period_x` + `gem_stand_d` + `gem_id` + `noas_c` |
 #' | [noas()] | NOAS04 nomenclature | `noas_c` |
 #'

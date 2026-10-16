@@ -5,7 +5,7 @@
 \title{Add the ThemaKart Source Note to a Map}
 \usage{
 stampBfs(
-  x = NULL,
+  x = "bottomright",
   y = NULL,
   year = NULL,
   text = NULL,
@@ -15,9 +15,9 @@ stampBfs(
 )
 }
 \arguments{
-\item{x}{position of the text: \code{NULL} for the lower right corner of a
-map of Switzerland in LV95, \code{"bottomright"} for the lower right corner
-of the plot region, or an x coordinate.}
+\item{x}{position of the text: \code{"bottomright"} (default, also for
+\code{NULL}) for the lower right corner of the plot region, which works in
+any CRS, or an x coordinate in the CRS of the plot.}
 
 \item{y}{y coordinate if \code{x} is numeric.}
 

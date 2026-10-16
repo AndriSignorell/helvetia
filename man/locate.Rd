@@ -4,7 +4,13 @@
 \alias{locate}
 \title{Find the Spatial Units Containing Points}
 \usage{
-locate(x = NULL, y = NULL, map = NULL, nPoints = 512)
+locate(
+  x = NULL,
+  y = NULL,
+  map = NULL,
+  nPoints = 512,
+  multiple = c("first", "na", "error")
+)
 }
 \arguments{
 \item{x, y}{coordinates in the CRS of \code{map}, in any form accepted by
@@ -14,10 +20,17 @@ plot with \code{\link[=locator]{locator()}}; finish with Esc or a right click.}
 \item{map}{an \code{sf} object; \code{NULL} uses \code{\link[=geoGemeinde]{geoGemeinde()}}.}
 
 \item{nPoints}{maximum number of points to click.}
+
+\item{multiple}{rule for points in more than one unit, i.e. on a common
+boundary or in overlapping units: \code{"first"} takes the first unit in
+the row order of \code{map}, \code{"na"} assigns none, \code{"error"} stops.}
 }
 \value{
-A data.frame with \code{x}, \code{y} and the attributes of the unit
-containing each point (\code{NA} outside all units).
+A data.frame with one row per point, in input order: \code{x}, \code{y},
+\code{n_treffer_n} (number of units containing the point) and the
+attributes of the assigned unit. Points outside all units and points
+with missing coordinates (e.g. failed \code{\link[=geocode]{geocode()}} matches) get \code{NA}
+attributes; the latter have \code{n_treffer_n = NA}.
 }
 \description{
 Determines the spatial unit (municipality, district, ...) containing

@@ -41,9 +41,29 @@ test_that("Arealstatistik: municipality filter, status, complete grid", {
 test_that("class sums are checked against the main domains", {
   res <- data.frame(gem_id = c(1, 1), area_ha = c(40, 50))
   dom <- data.frame(gem_id = 1, area_ha = 100)
-  expect_warning(helvetia:::.checkAreaSums(res, dom, 0.5), "differ")
+  expect_warning(sc <- helvetia:::.checkAreaSums(res, dom, 0.5), "differ")
+  expect_identical(sc$check_c, "difference")
   dom$area_ha <- 90
-  expect_silent(helvetia:::.checkAreaSums(res, dom, 0.5))
+  expect_silent(sc <- helvetia:::.checkAreaSums(res, dom, 0.5))
+  expect_identical(sc$check_c, "ok")
+})
+
+test_that("incomplete or missing sums are not checkable, not 'ok'", {
+  res <- data.frame(gem_id = c(1, 1, 2, 2), area_ha = c(NA, NA, 40, NA))
+  dom <- data.frame(gem_id = c(1, 2), area_ha = c(NA, 90))
+  expect_warning(sc <- helvetia:::.checkAreaSums(res, dom, 0.5),
+                 "could not be checked")
+  expect_identical(sc$check_c, c("not-checkable", "not-checkable"))
+})
+
+test_that("duplicated raw observations are an error, not a silent pick", {
+  nom <- helvetia:::.parseNoas(helvetia:::.noasInternal())
+  nom <- nom[nom$noas_c %in% c("1", "101", "102"), ]
+  raw <- read_fixture_csv("sdmx_area.csv")
+  dup <- raw[raw$REGION == "1" & raw$NOAS == "101", ]
+  dup$OBS_VALUE <- 999
+  expect_error(helvetia:::.parseArea(rbind(raw, dup), nom, "2013/18",
+                                     as.Date("2026-01-01")), "duplicated")
 })
 
 test_that("period labels and municipality stand", {

@@ -343,33 +343,10 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <p>All functions download from official sources and cache the result
 locally, so the chunks below are not evaluated when the vignette is
 built.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(helvetia)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>gem  <span class="ot">&lt;-</span> <span class="fu">gemeinde</span>(<span class="at">date =</span> <span class="fu">as.Date</span>(<span class="st">&quot;2021-01-01&quot;</span>))</span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>pop  <span class="ot">&lt;-</span> <span class="fu">popGemeinde</span>(<span class="at">year =</span> <span class="dv">2021</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>geo  <span class="ot">&lt;-</span> <span class="fu">geoGemeinde</span>(<span class="at">date =</span> <span class="fu">as.Date</span>(<span class="st">&quot;2021-01-01&quot;</span>))</span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>area <span class="ot">&lt;-</span> <span class="fu">arealGemeinde</span>(<span class="at">period =</span> <span class="st">&quot;2013/18&quot;</span>, <span class="at">nClasses =</span> <span class="dv">17</span>)</span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co"># aggregate the statistics before joining them to the map</span></span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>popTotal <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(ch_n <span class="sc">~</span> gem_id, <span class="at">data =</span> pop, <span class="at">FUN =</span> sum)</span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>br <span class="ot">&lt;-</span> <span class="fu">cut</span>(<span class="fu">log10</span>(popTotal<span class="sc">$</span>ch_n), <span class="dv">6</span>)</span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="fu">plotMap</span>(geo, <span class="at">id =</span> popTotal<span class="sc">$</span>gem_id,</span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>        <span class="at">col =</span> <span class="fu">hcl.colors</span>(<span class="dv">6</span>, <span class="st">&quot;Blues 3&quot;</span>, <span class="at">rev =</span> <span class="cn">TRUE</span>)[br], <span class="at">border =</span> <span class="cn">NA</span>)</span></code></pre></div>
-<div id="thematic-maps" class="section level2">
-<h2>Thematic maps</h2>
-<p>The generalised ThemaKart geometries of the BFS (formerly used
-through bfsMaps) are downloaded automatically:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">plotMap</span>(<span class="st">&quot;kanton&quot;</span>, <span class="at">id =</span> <span class="fu">c</span>(<span class="st">&quot;ZH&quot;</span>, <span class="st">&quot;BE&quot;</span>, <span class="st">&quot;TI&quot;</span>),</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>        <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;steelblue&quot;</span>, <span class="st">&quot;orange&quot;</span>, <span class="st">&quot;darkseagreen&quot;</span>), <span class="at">labels =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">addGewaesser</span>()</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co"># premium regions of the mandatory health insurance</span></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>preg <span class="ot">&lt;-</span> <span class="fu">praemienregion</span>(<span class="dv">2026</span>)</span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>reg  <span class="ot">&lt;-</span> <span class="fu">combineRegions</span>(<span class="fu">geoGemeinde</span>(<span class="st">&quot;2026-01-01&quot;</span>), preg<span class="sc">$</span>preg_x, preg<span class="sc">$</span>gem_id)</span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="fu">plotMap</span>(reg, <span class="at">col =</span> <span class="fu">hcl.colors</span>(<span class="fu">nrow</span>(reg), <span class="st">&quot;Set 3&quot;</span>), <span class="at">labels =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
-</div>
 <div id="time-concepts" class="section level2">
 <h2>Time concepts</h2>
+<p>Swiss municipal data have more than one time reference, and they must
+not be mixed up:</p>
 <table>
 <thead>
 <tr class="header">
@@ -384,7 +361,7 @@ through bfsMaps) are downloaded automatically:</p>
 </tr>
 <tr class="even">
 <td><code>jahr_n</code></td>
-<td>statistical year</td>
+<td>statistical year (reference date of the counts)</td>
 </tr>
 <tr class="odd">
 <td><code>period_x</code></td>
@@ -392,20 +369,61 @@ through bfsMaps) are downloaded automatically:</p>
 </tr>
 <tr class="even">
 <td><code>gem_stand_d</code></td>
-<td>municipality boundaries a result is reported on</td>
+<td>municipality stand a result is reported on</td>
 </tr>
 </tbody>
 </table>
-<p>A population figure for 2021 refers to the municipalities of
-31.12.2021, the Arealstatistik 2013/18 to the boundary stand in
-<code>gem_stand_d</code>. Check which municipalities match before
-joining:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">setdiff</span>(<span class="fu">unique</span>(pop<span class="sc">$</span>gem_id), gem<span class="sc">$</span>gem_id)</span></code></pre></div>
+<p>The STATPOP population of 2021 is counted on 31 December 2021, but
+the BFS publishes the whole series on <em>one</em> municipality stand
+(“Raumbezug”, e.g. 6 April 2025). That stand, not the year, decides
+which register and which geometries fit. The same BFS number does not
+guarantee the same boundaries.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(helvetia)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>pop   <span class="ot">&lt;-</span> <span class="fu">popGemeinde</span>(<span class="at">year =</span> <span class="dv">2021</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>stand <span class="ot">&lt;-</span> <span class="fu">unique</span>(pop<span class="sc">$</span>gem_stand_d)        <span class="co"># spatial reference of the cube</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>gem   <span class="ot">&lt;-</span> <span class="fu">gemeinde</span>(<span class="at">date =</span> stand)         <span class="co"># register of exactly that stand</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>geo   <span class="ot">&lt;-</span> <span class="fu">geoGemeinde</span>(<span class="at">date =</span> stand)      <span class="co"># geometries valid on that date</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co"># check the join before using it</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="fu">setdiff</span>(<span class="fu">unique</span>(pop<span class="sc">$</span>gem_id), gem<span class="sc">$</span>gem_id)</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="fu">setdiff</span>(<span class="fu">unique</span>(pop<span class="sc">$</span>gem_id), geo<span class="sc">$</span>gem_id)</span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>popTotal <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(ch_n <span class="sc">~</span> gem_id, <span class="at">data =</span> pop, <span class="at">FUN =</span> sum)</span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>br <span class="ot">&lt;-</span> <span class="fu">cut</span>(<span class="fu">log10</span>(popTotal<span class="sc">$</span>ch_n), <span class="dv">6</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="fu">plotMap</span>(geo, <span class="at">id =</span> popTotal<span class="sc">$</span>gem_id,</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>        <span class="at">col =</span> <span class="fu">hcl.colors</span>(<span class="dv">6</span>, <span class="st">&quot;Blues 3&quot;</span>, <span class="at">rev =</span> <span class="cn">TRUE</span>)[br], <span class="at">border =</span> <span class="cn">NA</span>)</span></code></pre></div>
+<p><code>geoGemeinde()</code> returns the most recent geometry stand on
+or before the date and reports by a message if it differs; ThemaKart
+stands are mostly 1 January. Compare <code>unique(geo$stand_d)</code>
+with <code>stand</code>, and check the mutations in between with
+<code>gemeindeMutationen(unique(geo$stand_d), stand)</code>.</p>
+<p>The Arealstatistik is reported on the stand in
+<code>gem_stand_d</code> as well:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>area <span class="ot">&lt;-</span> <span class="fu">arealGemeinde</span>(<span class="at">period =</span> <span class="st">&quot;2013/18&quot;</span>, <span class="at">nClasses =</span> <span class="dv">17</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">unique</span>(area<span class="sc">$</span>gem_stand_d)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">table</span>(<span class="fu">attr</span>(area, <span class="st">&quot;sumCheck&quot;</span>)<span class="sc">$</span>check_c)   <span class="co"># completeness of the class sums</span></span></code></pre></div>
+</div>
+<div id="thematic-maps" class="section level2">
+<h2>Thematic maps</h2>
+<p>The generalised ThemaKart geometries of the BFS (formerly used
+through bfsMaps) are downloaded automatically:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">plotMap</span>(<span class="st">&quot;kanton&quot;</span>, <span class="at">id =</span> <span class="fu">c</span>(<span class="st">&quot;ZH&quot;</span>, <span class="st">&quot;BE&quot;</span>, <span class="st">&quot;TI&quot;</span>),</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>        <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;steelblue&quot;</span>, <span class="st">&quot;orange&quot;</span>, <span class="st">&quot;darkseagreen&quot;</span>), <span class="at">labels =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">addGewaesser</span>()</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co"># premium regions of the mandatory health insurance; municipalities split</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co"># over several regions must be resolved explicitly</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>preg <span class="ot">&lt;-</span> <span class="fu">praemienregion</span>(<span class="dv">2026</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>preg<span class="sc">$</span>preg_x[preg<span class="sc">$</span>split_l] <span class="ot">&lt;-</span> <span class="st">&quot;mehrere&quot;</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>reg  <span class="ot">&lt;-</span> <span class="fu">combineRegions</span>(<span class="fu">geoGemeinde</span>(<span class="st">&quot;2026-01-01&quot;</span>), preg<span class="sc">$</span>preg_x, preg<span class="sc">$</span>gem_id)</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="fu">plotMap</span>(reg, <span class="at">col =</span> <span class="fu">hcl.colors</span>(<span class="fu">nrow</span>(reg), <span class="st">&quot;Set 3&quot;</span>), <span class="at">labels =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 </div>
 <div id="sources-and-cache" class="section level2">
 <h2>Sources and cache</h2>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">sourceInfo</span>(area)</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">cacheList</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">sourceInfo</span>(pop)        <span class="co"># incl. the POST selections and original download time</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">sourceInfo</span>(area)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">cacheList</span>()</span></code></pre></div>
 </div>
 
 

@@ -36,3 +36,11 @@ local_themakart <- function(env = parent.frame()) {
                        helvetia.themakartSet = 2023L, .local_envir = env)
   dir
 }
+
+
+# Tests of the set search must not see a local set left in the session's
+# options (devtools::test() runs in the user's session).
+local_no_themakart_dir <- function(env = parent.frame()) {
+  withr::local_options(helvetia.themakartDir = NULL,
+                       helvetia.themakartSet = NULL, .local_envir = env)
+}

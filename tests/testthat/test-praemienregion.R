@@ -37,3 +37,10 @@ test_that("live: praemienregion()", {
   expect_gt(length(unique(p$gem_id)), 2000)
   expect_true(all(p$preg_c %in% 0:3))
 })
+
+test_that("a sentence naming several columns is no header row", {
+  info <- readxl::read_excel(fixture("praemienregionen.xlsx"), "Informationen",
+                             col_names = FALSE, .name_repair = "minimal")
+  expect_true(is.na(helvetia:::.findHeaderRow(
+    info, c("bfs|ofs", "region", "gemeinde|commune"))))
+})

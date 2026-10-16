@@ -2,7 +2,8 @@
 #
 # The yearly sets ("Kartengeometrien ThemaKart - Set YYYY") are discovered
 # through the search API of the BFS data catalogue (dam-api), downloaded
-# once per set into the cache and unpacked there. Layers are found by
+# once per set into the cache and read from the zip in place (GDAL
+# /vsizip/), without unpacking. Layers are found by
 # parsing the file names (K4<code><yyyymmdd><variant>_ch2007<Poly|Pnts>),
 # not through a hand-maintained path table.
 
@@ -89,12 +90,39 @@ themakartSets <- function(cache = TRUE, refresh = FALSE) {
   stringsAsFactors = FALSE)
 
 
-# Index of all layers in an unpacked set, parsed from the file names.
-.themakartIndex <- function(dir) {
-  files <- list.files(dir, pattern = "\\.(shp|gpkg)$", recursive = TRUE,
-                      full.names = TRUE, ignore.case = TRUE)
+# Index of all layers of a set, parsed from the file names: either the
+# downloaded zip (read in place through GDAL's /vsizip/) or a locally
+# unpacked directory.
+.themakartIndex <- function(src) {
+  if (!is.null(src$zip)) {
+    names <- .zipEntries(src$zip)
+    zipPath <- normalizePath(src$zip, winslash = "/", mustWork = TRUE)
+    files <- paste0("/vsizip/", zipPath, "/",
+                    names[grepl("\\.(shp|gpkg)$", names, ignore.case = TRUE)])
+  } else {
+    files <- list.files(src$dir, pattern = "\\.(shp|gpkg)$",
+                        recursive = TRUE, full.names = TRUE,
+                        ignore.case = TRUE)
+  }
   .parseThemakartFiles(files)
 }
+
+
+# Entry names of a zip as UTF-8. Names without the UTF-8 flag are stored in
+# the DOS code page CP437 ("Gesamtfl\x84che"); GDAL's /vsizip/ decodes them
+# the same way, so the converted names address the entries. Nothing is
+# extracted: R on Windows cannot create files or directories from such
+# names.
+.zipEntries <- function(zip) {
+  names <- unzip(zip, list = TRUE)$Name
+  bad <- !validUTF8(names)
+  if (any(bad)) names[bad] <- iconv(names[bad], "CP437", "UTF-8")
+  if (anyNA(names))
+    stop("The entry names of the ThemaKart archive could not be decoded.",
+         call. = FALSE)
+  names
+}
+
 
 .parseThemakartFiles <- function(files) {
   re <- paste0("^k4_?([a-z0-9]{4})_?([0-9]{8}|yyyymmdd)",
@@ -122,9 +150,9 @@ themakartSets <- function(cache = TRUE, refresh = FALSE) {
 }
 
 
-# Directory of an unpacked set; downloads and unpacks it if necessary.
-# options(helvetia.themakartDir = <path>) uses a locally unpacked set
-# instead (e.g. an existing bfsMaps installation).
+# Location of a set: the downloaded zip, kept in the cache and read in
+# place, or with options(helvetia.themakartDir = <path>) a locally unpacked
+# set (e.g. from an existing bfsMaps installation).
 .themakartDir <- function(setYear, cache, refresh) {
   local <- getOption("helvetia.themakartDir")
   if (!is.null(local)) {
@@ -136,17 +164,34 @@ themakartSets <- function(cache = TRUE, refresh = FALSE) {
   set <- .tkSetInfo(setYear, cache = cache, refresh = refresh)
   dir <- if (cache) file.path(.cacheDir(), "themakart", set$set_n)
          else file.path(tempdir(), "helvetia_themakart", set$set_n)
-  metaFile <- file.path(dir, "download.rds")
+  zip <- file.path(dir, "set.zip")
+  metaFile <- file.path(dir, "set.rds")
 
-  if (refresh || !file.exists(metaFile)) {
-    unlink(dir, recursive = TRUE)
-    dl <- .downloadChecked(set$url, file.path(dir, "set.zip"))
-    .unzipAll(dl$path, file.path(dir, "files"))
-    unlink(dl$path)
-    saveRDS(dl[c("url", "retrievedAt", "md5")], metaFile)
+  have <- file.exists(metaFile) && file.exists(zip)
+  if (refresh || !have) {
+    # download next to the old copy, verify, then replace: a failed refresh
+    # leaves the existing set untouched
+    dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+    new <- file.path(dir, "set.zip.new")
+    on.exit(unlink(new), add = TRUE)
+    dl <- tryCatch({
+      d <- .downloadChecked(set$url, new)
+      if (!length(.zipEntries(new)))
+        stop("the downloaded file is not a readable zip archive")
+      d
+    }, error = function(e) e)
+    if (inherits(dl, "error")) {
+      if (!have) stop(dl)
+      warning(sprintf(paste("ThemaKart set %s could not be refreshed (%s);",
+                            "using the cached copy."),
+                      set$set_n, conditionMessage(dl)), call. = FALSE)
+    } else {
+      .moveFile(new, zip)
+      saveRDS(list(url = dl$url, retrievedAt = dl$retrievedAt,
+                   md5 = unname(tools::md5sum(zip))), metaFile)
+    }
   }
-  list(dir = file.path(dir, "files"), set = set,
-       download = readRDS(metaFile))
+  list(zip = zip, set = set, download = readRDS(metaFile))
 }
 
 
@@ -166,31 +211,6 @@ themakartSets <- function(cache = TRUE, refresh = FALSE) {
 }
 
 
-# Unzip, including zip files nested in the archive.
-.unzipAll <- function(zip, exdir) {
-  files <- unzip(zip, exdir = exdir)
-  inner <- grep("\\.zip$", files, value = TRUE, ignore.case = TRUE)
-  for (z in inner) {
-    .unzipAll(z, file.path(dirname(z), sub("\\.zip$", "", basename(z),
-                                           ignore.case = TRUE)))
-    unlink(z)
-  }
-  invisible(exdir)
-}
-
-
-# Default set for a reference date: the set of that year if published,
-# otherwise the most recent set.
-.tkDefaultSet <- function(date, cache, refresh) {
-  if (!is.null(getOption("helvetia.themakartDir")))
-    return(getOption("helvetia.themakartSet"))
-  if (is.null(date)) return(NULL)
-  sets <- themakartSets(cache = cache, refresh = refresh)
-  y <- as.integer(format(date, "%Y"))
-  if (y %in% sets$set_n) y else NULL
-}
-
-
 #' Get Generalised Geometries for Thematic Maps (ThemaKart)
 #'
 #' Reads a layer of the BFS map geometry sets for small-scale thematic maps
@@ -198,11 +218,16 @@ themakartSets <- function(cache = TRUE, refresh = FALSE) {
 #' official basis for statistical maps of Switzerland: small, fast to draw
 #' and available for many spatial units besides the institutional ones.
 #'
-#' A set is downloaded once (about 12 MB) and kept unpacked in the cache.
-#' Within a set, the layer with the most recent stand on or before `date`
-#' is used; its stand is returned in `stand_d` and reported by a message if
-#' it differs from `date`. Without `setYear` the set of the year of `date`
-#' is used if published, otherwise the most recent set. To use an already
+#' A set is downloaded once (about 12 MB) as zip archive into the cache and
+#' read from the archive in place, without unpacking. `refresh = TRUE`
+#' downloads it anew and replaces the cached archive only after the new one
+#' has been verified; on failure the cached set is kept with a warning.
+#' A set holds the geometries of its own stand (and possibly a few older
+#' ones). Without `setYear`, the sets are searched for the most recent stand
+#' on or before `date`: first the set of the year of `date`, then the newer
+#' sets, then the older ones; each set searched is downloaded once. Without
+#' `date` the most recent set is used. The stand found is returned in
+#' `stand_d` and reported by a message if it differs from `date`. To use an already
 #' unpacked set, e.g. from a former bfsMaps installation, set
 #' `options(helvetia.themakartDir = <path>)` and optionally
 #' `options(helvetia.themakartSet = <year>)`.
@@ -253,11 +278,26 @@ geoThemakart <- function(unit = "gemeinde", date = NULL,
   output <- match.arg(output)
   u <- .tkUnit(unit)
   if (!is.null(date)) date <- .asDate(date)
-  setYear <- .asYear(setYear, "setYear") %||% .tkDefaultSet(date, cache, refresh)
+  setYear <- .asYear(setYear, "setYear")
 
-  src <- .themakartDir(setYear, cache, refresh)
-  idx <- .themakartIndex(src$dir)
-  lyr <- .tkPickLayer(idx, u$code, date, area, output)
+  # a set holds only its own stand (and possibly a few older ones), so the
+  # stand valid at `date` is searched over the sets
+  tried <- character()
+  for (sy in .tkCandidateSets(setYear, date, cache, refresh)) {
+    src <- .themakartDir(sy, cache, refresh)
+    idx <- .themakartIndex(src)
+    lyr <- .tkFindLayer(idx, u$code, date, area, output)
+    if (!is.null(lyr)) break
+    tried <- c(tried, as.character(src$set$set_n))
+  }
+  if (is.null(lyr))
+    stop(sprintf(paste("Argument 'date': no %s layer (%s area, %s) on or",
+                       "before %s in ThemaKart set(s) %s."),
+                 u$code, area, output, format(date %||% Sys.Date()),
+                 paste(tried, collapse = ", ")), call. = FALSE)
+  if (!is.null(date) && !is.na(lyr$date) && lyr$date != date)
+    message(sprintf("%s: stand %s of set %s used for %s.", u$code, lyr$date,
+                    src$set$set_n, date))
 
   g <- sf::st_read(lyr$path, quiet = TRUE)
   out <- .tkNormalise(g, u, lyr$date, crs)
@@ -272,6 +312,20 @@ geoThemakart <- function(unit = "gemeinde", date = NULL,
     retrievedAt = src$download$retrievedAt %||% Sys.time(),
     checksum = src$download$md5 %||% NA_character_,
     version = paste0(lyr$code, format(lyr$date, "%Y%m%d"), lyr$variant)))
+}
+
+
+# Sets to search, in order: a given set only; else the set of the year of
+# `date`, then the newer sets, then the older ones; without `date` the most
+# recent set. A locally unpacked set (option) is the only candidate.
+.tkCandidateSets <- function(setYear, date, cache, refresh) {
+  if (!is.null(getOption("helvetia.themakartDir")))
+    return(list(setYear %||% getOption("helvetia.themakartSet")))
+  if (!is.null(setYear)) return(list(setYear))
+  sets <- themakartSets(cache = cache, refresh = refresh)$set_n
+  if (is.null(date)) return(list(max(sets)))
+  y <- as.integer(format(date, "%Y"))
+  as.list(c(sort(sets[sets >= y]), sort(sets[sets < y], decreasing = TRUE)))
 }
 
 
@@ -290,31 +344,16 @@ geoThemakart <- function(unit = "gemeinde", date = NULL,
 }
 
 
-.tkPickLayer <- function(idx, code, date, area, output) {
+# Most recent layer on or before `date` in one set; NULL if there is none.
+.tkFindLayer <- function(idx, code, date, area, output) {
   cand <- idx[idx$code == code & idx$area == area & idx$output == output, ,
               drop = FALSE]
-  if (!nrow(cand))
-    stop(sprintf(paste("No %s layer (%s area, %s) in this ThemaKart set;",
-                       "available codes: %s."),
-                 code, area, output,
-                 paste(sort(unique(idx$code)), collapse = ", ")),
-         call. = FALSE)
-  if (!is.null(date) && any(!is.na(cand$date))) {
-    ok <- !is.na(cand$date) & cand$date <= date
-    if (!any(ok))
-      stop(sprintf(paste("Argument 'date': no %s layer on or before %s;",
-                         "available stands: %s."),
-                   code, date,
-                   paste(sort(unique(cand$date)), collapse = ", ")),
-           call. = FALSE)
-    cand <- cand[ok, , drop = FALSE]
-  }
+  if (!is.null(date) && any(!is.na(cand$date)))
+    cand <- cand[!is.na(cand$date) & cand$date <= date, , drop = FALSE]
+  if (!nrow(cand)) return(NULL)
   cand <- cand[order(cand$date, decreasing = TRUE, na.last = TRUE), ,
                drop = FALSE]
-  lyr <- cand[1L, ]
-  if (!is.null(date) && !is.na(lyr$date) && lyr$date != date)
-    message(sprintf("%s: stand %s used for %s.", code, lyr$date, date))
-  lyr
+  cand[1L, ]
 }
 
 
@@ -322,7 +361,15 @@ geoThemakart <- function(unit = "gemeinde", date = NULL,
   attrCols <- setdiff(names(g), attr(g, "sf_column"))
   names(g)[match(attrCols, names(g))] <- tolower(attrCols)
   g <- .fixEncoding(g)
-  id <- if ("id" %in% names(g)) g$id else g[[1L]]
+  if (!"id" %in% names(g))
+    stop(sprintf(paste("ThemaKart layer %s has no id column (available: %s);",
+                       "the file format may have changed."), u$code,
+                 paste(attrCols, collapse = ", ")), call. = FALSE)
+  if (anyNA(.asInt(g$id)))
+    stop(sprintf("ThemaKart layer %s has missing or non-numeric ids.", u$code),
+         call. = FALSE)
+  g <- .tkUnionById(g, u$code)
+  id <- g$id
   nm <- if ("name" %in% names(g)) g$name else rep(NA_character_, nrow(g))
 
   df <- data.frame(stand_d = rep(date, nrow(g)),
@@ -340,6 +387,26 @@ geoThemakart <- function(unit = "gemeinde", date = NULL,
   out <- out[order(out[[u$id]]), ]
   rownames(out) <- NULL
   out
+}
+
+
+# A unit must be one row. Polygons split into several rows (multipart
+# stored as single parts) are unioned; repeated points, or one id with
+# different names, are an error.
+.tkUnionById <- function(g, code) {
+  if (!anyDuplicated(g$id)) return(g)
+  dup <- unique(g$id[duplicated(g$id)])
+  poly <- all(sf::st_geometry_type(g) %in% c("POLYGON", "MULTIPOLYGON"))
+  nm <- if ("name" %in% names(g)) g$name else rep(NA_character_, nrow(g))
+  nNames <- tapply(nm, g$id, function(v) length(unique(v)))
+  if (!poly || any(nNames > 1L))
+    stop(sprintf("ThemaKart layer %s: id(s) %s occur repeatedly.", code,
+                 paste(head(dup, 10), collapse = ", ")), call. = FALSE)
+  first <- g[!duplicated(g$id), , drop = FALSE]
+  geom <- sf::st_geometry(g)
+  u <- lapply(first$id, function(i) sf::st_union(geom[g$id == i]))
+  sf::st_geometry(first) <- sf::st_set_crs(do.call(c, u), sf::st_crs(g))
+  first
 }
 
 
@@ -384,7 +451,7 @@ geoGewaesser <- function(type = c("see", "fluss"), category = NULL,
   setYear <- .asYear(setYear, "setYear") %||% .helvetiaEnv$lastSet
   code <- c(see = "seen", fluss = "flus")[[type]]
   src <- .themakartDir(setYear, cache, refresh)
-  idx <- .themakartIndex(src$dir)
+  idx <- .themakartIndex(src)
   idx <- idx[idx$code == code & !is.na(idx$category), , drop = FALSE]
   if (!is.null(category)) idx <- idx[idx$category %in% category, ]
   if (!nrow(idx))

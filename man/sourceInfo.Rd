@@ -18,6 +18,8 @@ An object of class \code{SourceInfo}, a list with the elements
 \item{\code{retrievedAt}}{time of the download.}
 \item{\code{checksum}}{MD5 checksum of a downloaded file, else \code{NA}.}
 \item{\code{version}}{source version, stand or period, else \code{NA}.}
+\item{\code{query}}{POST selections sent to the source (PXWeb), else
+\code{NULL}; the URL alone does not describe such a request.}
 \item{\code{notes}}{further remarks, or \code{NULL}.}
 }
 \code{NULL} if \code{x} carries no metadata.

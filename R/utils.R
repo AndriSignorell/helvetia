@@ -32,6 +32,16 @@
 }
 
 
+# Validate an optional vector of whole numbers (years, ids).
+.checkWhole <- function(x, name) {
+  if (is.null(x)) return(invisible(NULL))
+  if (!is.numeric(x) || !length(x) || anyNA(x) || any(x != round(x)))
+    stop(sprintf("Argument '%s' must be a vector of whole numbers without NA.",
+                 name), call. = FALSE)
+  invisible(x)
+}
+
+
 # Parse dates as delivered by the various sources (dd.mm.yyyy, dd-mm-yyyy,
 # yyyy-mm-dd). Empty strings become NA.
 .parseDateAny <- function(x) {

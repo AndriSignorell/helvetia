@@ -13,7 +13,11 @@ combineRegions(map, groups, id = NULL)
 along \code{id}; units with \code{NA} are left out.}
 
 \item{id}{optional ids of the units \code{groups} refers to, cantons also by
-abbreviation.}
+abbreviation. An id may occur repeatedly only with the same group
+(such duplicates are dropped); an id assigned to different groups is an
+error, as a unit cannot be part of two regions. Resolve such units
+explicitly before, e.g. the municipalities split over several premium
+regions (\code{split_l} in \code{\link[=praemienregion]{praemienregion()}}).}
 }
 \value{
 An \code{sf} object with one row per group: the column \code{groups}
@@ -32,6 +36,8 @@ standards.
 \dontrun{
 preg <- praemienregion(2023)
 geo  <- geoGemeinde(as.Date("2023-01-01"))
+# municipalities split over several regions: own group "mehrere"
+preg$preg_x[preg$split_l] <- "mehrere"
 reg  <- combineRegions(geo, preg$preg_x, id = preg$gem_id)
 plotMap(reg)
 }

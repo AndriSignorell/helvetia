@@ -108,11 +108,16 @@
 .bfsQuery <- function(url, query, maxCells = .bfsMaxCells()) {
   chunks <- .chunkQuery(query, maxCells)
   out <- vector("list", length(chunks))
+  bodies <- character(length(chunks))
   for (i in seq_along(chunks)) {
     if (i > 1L) Sys.sleep(0.4)            # API rate limit (calls per window)
-    out[[i]] <- .parseBfsData(.httpJson(url, post = .pxwebBody(chunks[[i]])))
+    body <- .pxwebBody(chunks[[i]])
+    bodies[i] <- jsonlite::toJSON(body, auto_unbox = TRUE)
+    out[[i]] <- .parseBfsData(.httpJson(url, post = body))
   }
-  do.call(rbind, out)
+  res <- do.call(rbind, out)
+  attr(res, "queries") <- bodies          # the POST selections, for sourceInfo()
+  res
 }
 
 
@@ -131,4 +136,32 @@
   df$valueRaw <- val
   df$value <- suppressWarnings(as.numeric(val))
   df
+}
+
+
+# The total of an eliminable variable: code -99999 where present, else the
+# value text containing "Total" (e.g. "Geschlecht - Total").
+.bfsTotal <- function(variable) {
+  if ("-99999" %in% variable$values) return("-99999")
+  .bfsValue(variable, "Total")
+}
+
+
+# Spatial reference of a cube ("Raumbezug: Gemeinden / 06.04.2025"). It is
+# not part of the API metadata, only of the table page; NA if not found.
+.bfsSpatialRef <- function(px, lang = "de") {
+  url <- sprintf("https://www.pxweb.bfs.admin.ch/pxweb/%s/%s/-/%s.px/",
+                 lang, px, px)
+  html <- tryCatch(.httpText(url), error = function(e) "")
+  .parseSpatialRef(html, url)
+}
+
+.parseSpatialRef <- function(html, url = NA_character_) {
+  txt <- gsub("\\s+", " ", gsub("<[^>]+>", " ", html))
+  m <- regmatches(txt, regexec(
+    "Raumbezug:? *([^0-9]{0,40}?)([0-9]{2}\\.[0-9]{2}\\.[0-9]{4})", txt))[[1L]]
+  if (!length(m))
+    return(list(date = as.Date(NA), text = NA_character_, url = url))
+  list(date = as.Date(m[3L], format = "%d.%m.%Y"),
+       text = trimws(paste0("Raumbezug: ", m[2L], m[3L])), url = url)
 }
