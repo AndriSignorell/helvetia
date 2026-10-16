@@ -1,55 +1,66 @@
 # Source metadata and key validation ----------------------------------------
 
 # Build the metadata record attached to every returned object.
-.source_meta <- function(source_x, source_url, retrieved_at = Sys.time(),
-                         checksum = NA_character_, version = NA_character_,
-                         notes = NULL) {
+.sourceMeta <- function(sourceText, url, retrievedAt = Sys.time(),
+                        checksum = NA_character_, version = NA_character_,
+                        notes = NULL) {
   structure(
-    list(source_x     = source_x,
-         source_url   = source_url,
-         retrieved_at = as.POSIXct(retrieved_at),
-         checksum     = checksum,
-         version      = version,
-         notes        = notes),
-    class = "helvetia_source"
+    list(source      = sourceText,
+         url         = url,
+         retrievedAt = as.POSIXct(retrievedAt),
+         checksum    = checksum,
+         version     = version,
+         notes       = notes),
+    class = "SourceInfo"
   )
 }
 
 
-.attach_source_metadata <- function(x, metadata) {
+.attachSourceMetadata <- function(x, metadata) {
   attr(x, "source") <- metadata
   x
 }
 
 
-#' Source metadata of a helvetia result
+#' Get the Source Metadata of a Result
 #'
-#' Every object returned by the package carries a record of where it came
-#' from: source description, exact request URL(s), retrieval time, file
-#' checksum (where a file was downloaded) and the source version or stand.
+#' Returns the provenance record that every data object of helvetia
+#' carries. Use it to cite a source correctly, to see which stand or version
+#' a cached result is based on, or to reproduce a download exactly.
+#'
+#' The record is stored in the attribute `"source"` and survives the cache:
+#' a cached result reports the time of its original download, not of the
+#' cache hit.
 #'
 #' @param x an object returned by one of the data functions, e.g.
-#'   [gemeinde()] or [pop_gemeinde()]
+#'   [gemeinde()] or [popGemeinde()].
 #'
-#' @return An object of class `helvetia_source` (a list with elements
-#'   `source_x`, `source_url`, `retrieved_at`, `checksum`, `version`,
-#'   `notes`), or `NULL` if `x` carries no metadata.
+#' @return An object of class `SourceInfo`, a list with the elements
+#'   \describe{
+#'     \item{`source`}{description of the source.}
+#'     \item{`url`}{exact request URL(s).}
+#'     \item{`retrievedAt`}{time of the download.}
+#'     \item{`checksum`}{MD5 checksum of a downloaded file, else `NA`.}
+#'     \item{`version`}{source version, stand or period, else `NA`.}
+#'     \item{`notes`}{further remarks, or `NULL`.}
+#'   }
+#'   `NULL` if `x` carries no metadata.
 #'
+#' @family swiss.source
+#' @concept source-metadata
+#' @concept reproducibility
 #' @examples
-#' \dontrun{
-#' gem <- gemeinde(as.Date("2021-01-01"))
-#' source_info(gem)
-#' }
+#' sourceInfo(kanton())
 #' @export
-source_info <- function(x) attr(x, "source", exact = TRUE)
+sourceInfo <- function(x) attr(x, "source", exact = TRUE)
 
 
 #' @export
-print.helvetia_source <- function(x, ...) {
-  cat("Source:     ", x$source_x, "\n", sep = "")
-  cat("URL:        ", paste(x$source_url, collapse = "\n            "), "\n",
+print.SourceInfo <- function(x, ...) {
+  cat("Source:     ", x$source, "\n", sep = "")
+  cat("URL:        ", paste(x$url, collapse = "\n            "), "\n",
       sep = "")
-  cat("Retrieved:  ", format(x$retrieved_at, "%Y-%m-%d %H:%M:%S %Z"), "\n",
+  cat("Retrieved:  ", format(x$retrievedAt, "%Y-%m-%d %H:%M:%S %Z"), "\n",
       sep = "")
   if (!all(is.na(x$version)))
     cat("Version:    ", paste(x$version, collapse = ", "), "\n", sep = "")
@@ -61,16 +72,16 @@ print.helvetia_source <- function(x, ...) {
 
 
 # Error if the combination of key columns is not unique.
-.validate_unique_key <- function(x, key, what = "result") {
-  .require_cols(x, key, what)
+.validateUniqueKey <- function(x, key, what = "result") {
+  .requireCols(x, key, what)
   k <- as.data.frame(x)[, key, drop = FALSE]
   dup <- duplicated(k)
   if (any(dup)) {
-    ex <- utils::head(unique(k[dup, , drop = FALSE]), 5)
-    stop(sprintf(paste0("key (%s) of %s is not unique: %d duplicated ",
+    ex <- head(unique(k[dup, , drop = FALSE]), 5)
+    stop(sprintf(paste0("Key (%s) of %s is not unique: %d duplicated ",
                         "row(s), e.g.\n%s"),
                  paste(key, collapse = ", "), what, sum(dup),
-                 paste(utils::capture.output(print(ex, row.names = FALSE)),
+                 paste(capture.output(print(ex, row.names = FALSE)),
                        collapse = "\n")),
          call. = FALSE)
   }

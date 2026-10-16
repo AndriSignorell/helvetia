@@ -4,16 +4,17 @@
 # Every cached object is the *parsed* result including its source metadata,
 # so a cache hit returns exactly what the original download returned.
 
-.cache_dir <- function() {
-  getOption("helvetia.cache_dir", tools::R_user_dir("helvetia", "cache"))
+#' @importFrom tools R_user_dir
+.cacheDir <- function() {
+  getOption("helvetia.cacheDir", R_user_dir("helvetia", "cache"))
 }
 
 
-.cache_path <- function(source, version, ...) {
+.cachePath <- function(source, version, ...) {
   clean <- function(x) gsub("[^A-Za-z0-9._-]", "_", as.character(x))
   key <- paste(clean(c(...)), collapse = "_")
   if (!nzchar(key)) key <- "data"
-  file.path(.cache_dir(), clean(source), clean(version), paste0(key, ".rds"))
+  file.path(.cacheDir(), clean(source), clean(version), paste0(key, ".rds"))
 }
 
 
@@ -28,7 +29,7 @@
   mode <- match.arg(mode)
   .checkFlag(cache)
   .checkFlag(refresh)
-  path <- .cache_path(source, version, key)
+  path <- .cachePath(source, version, key)
   have <- cache && file.exists(path)
 
   if (have && !refresh && mode == "cache-first")
@@ -39,7 +40,7 @@
   if (inherits(res, "error")) {
     if (have) {
       warning(sprintf(
-        "%s could not be retrieved (%s); using cached copy from %s",
+        "%s could not be retrieved (%s); using the cached copy from %s.",
         source, conditionMessage(res),
         format(file.mtime(path), "%Y-%m-%d %H:%M")), call. = FALSE)
       return(readRDS(path))
@@ -55,29 +56,40 @@
 }
 
 
-#' Inspect and clear the local cache
+#' List and Clear the Local Cache
 #'
-#' Downloads are cached below [tools::R_user_dir()]`("helvetia", "cache")`.
-#' The location can be changed with `options(helvetia.cache_dir = <path>)`.
+#' Downloads are kept in a local cache so that repeated calls are fast and
+#' work offline. `cacheList()` shows what is stored, e.g. to see which stands
+#' are available without network access; `cacheClear()` removes entries,
+#' e.g. to free disk space or to force a complete new download.
 #'
-#' @param source optional source name to restrict the operation to
-#'   (`"agvch"`, `"pxweb"`, `"geometry"`, `"area"`, `"sdmx"`); `NULL` for all
+#' The cache lives in [tools::R_user_dir()]`("helvetia", "cache")`; set
+#' `options(helvetia.cacheDir = <path>)` to use another directory. A
+#' single result is refreshed with the argument `refresh = TRUE` of the
+#' respective data function.
 #'
-#' @return `cache_list()` returns a data.frame with columns `source`,
-#'   `version`, `file`, `size_mb` and `modified`. `cache_clear()` returns
-#'   the number of removed files invisibly.
+#' @param source optional source name to restrict the operation to, one of
+#'   `"agvch"`, `"pxweb"`, `"sdmx"`, `"area"`, `"geometry"`, `"themakart"`,
+#'   `"priminfo"`; `NULL` for all sources.
 #'
+#' @return `cacheList()` returns a data.frame with the columns `source`,
+#'   `version`, `file`, `sizeMb` and `modified`. `cacheClear()` returns the
+#'   number of removed files invisibly.
+#'
+#' @family swiss.source
+#' @concept caching
+#' @concept reproducibility
 #' @examples
-#' cache_list()
+#' cacheList()
 #' @export
-cache_list <- function(source = NULL) {
-  root <- .cache_dir()
+cacheList <- function(source = NULL) {
+  root <- .cacheDir()
   dir <- if (is.null(source)) root else file.path(root, source)
   files <- list.files(dir, pattern = "\\.rds$", recursive = TRUE,
                       full.names = TRUE)
   if (!length(files))
     return(data.frame(source = character(), version = character(),
-                      file = character(), size_mb = numeric(),
+                      file = character(), sizeMb = numeric(),
                       modified = as.POSIXct(character())))
   rel <- substring(files, nchar(root) + 2L)
   parts <- strsplit(rel, "[/\\\\]")
@@ -85,18 +97,18 @@ cache_list <- function(source = NULL) {
   data.frame(source   = vapply(parts, `[`, "", 1L),
              version  = vapply(parts, `[`, "", 2L),
              file     = vapply(parts, function(p) p[length(p)], ""),
-             size_mb  = round(info$size / 2^20, 2),
+             sizeMb   = round(info$size / 2^20, 2),
              modified = info$mtime)
 }
 
 
-#' @rdname cache_list
+#' @rdname cacheList
 #' @export
-cache_clear <- function(source = NULL) {
-  root <- .cache_dir()
+cacheClear <- function(source = NULL) {
+  root <- .cacheDir()
   dir <- if (is.null(source)) root else file.path(root, source)
   files <- list.files(dir, recursive = TRUE, full.names = TRUE)
   n <- sum(file.remove(files))
-  message(sprintf("%d cached file(s) removed", n))
+  message(sprintf("%d cached file(s) removed.", n))
   invisible(n)
 }

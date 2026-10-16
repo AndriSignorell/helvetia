@@ -2,45 +2,48 @@
 % Please edit documentation in R/gemeinde.R
 \name{gemeinde}
 \alias{gemeinde}
-\title{Municipalities valid at a reference date}
+\title{Get the Municipalities Valid at a Reference Date}
 \usage{
-gemeinde(stand_d = NULL, cache = TRUE, refresh = FALSE)
+gemeinde(date = NULL, cache = TRUE, refresh = FALSE)
 }
 \arguments{
-\item{stand_d}{reference date (\code{Date} or \code{"YYYY-MM-DD"}); the default
-\code{NULL} uses today}
+\item{date}{reference date, a \code{Date} or a string \code{"YYYY-MM-DD"}. The
+default \code{NULL} uses today.}
 
-\item{cache}{logical; read from and write to the local cache (see
-\code{\link[=cache_list]{cache_list()}})}
+\item{cache}{logical; if \code{TRUE}, results are read from and written to the
+local cache (see \code{\link[=cacheList]{cacheList()}}).}
 
-\item{refresh}{logical; force a new download even if a cached copy exists}
+\item{refresh}{logical; if \code{TRUE}, the source is queried again even if a
+cached copy exists.}
 }
 \value{
 A data.frame with one row per municipality and the columns
 \describe{
-\item{\code{stand_d}}{reference date of the register stand}
-\item{\code{gem_id}}{BFS municipality number}
-\item{\code{gem_x}}{municipality name}
-\item{\code{kanton_c}}{canton abbreviation, e.g. \code{"ZH"}}
-\item{\code{kanton_id}}{BFS canton number (1--26)}
-\item{\code{bezirk_id}}{BFS number of the district or equivalent unit}
-\item{\code{bezirk_x}}{district name}
-\item{\code{hist_id}}{AGVCH historical number of the municipality version}
-\item{\code{valid_from_d}, \code{valid_to_d}}{validity of that version}
+\item{\code{stand_d}}{date of the register stand.}
+\item{\code{gem_id}}{BFS municipality number.}
+\item{\code{gem_x}}{municipality name.}
+\item{\code{kanton_c}}{canton abbreviation, e.g. \code{"ZH"}.}
+\item{\code{kanton_id}}{BFS canton number, 1 to 26.}
+\item{\code{bezirk_id}}{BFS number of the district or equivalent unit.}
+\item{\code{bezirk_x}}{district name.}
+\item{\code{hist_id}}{AGVCH historical number of the municipality version.}
+\item{\code{valid_from_d}, \code{valid_to_d}}{validity of that version.}
 }
-Source metadata are available via \code{\link[=source_info]{source_info()}}.
+The key is \code{stand_d} + \code{gem_id}; source metadata via \code{\link[=sourceInfo]{sourceInfo()}}.
 }
 \description{
-Returns the stock of Swiss political municipalities (Gemeinden) valid at
-a given reference date, together with their district and canton, from
-the historicised municipality register of the Swiss Federal Statistical
-Office (AGVCH, snapshot service).
+Returns the stock of Swiss political municipalities valid at a given date,
+together with their district and canton, from the historicised
+municipality register of the Swiss Federal Statistical Office (AGVCH).
+This is the reference against which statistics and geometries of the
+same stand are joined, and the starting point for every analysis that
+crosses a municipality merger.
 }
 \details{
-The hierarchy is derived from the \code{Parent} references of the snapshot
-(canton -> district -> municipality), not from positional or level
-codes. Each municipality occurs at most once per reference date; this is
-checked.
+The hierarchy canton -> district -> municipality is derived from the
+\code{Parent} references of the AGVCH snapshot service, not from positional or
+level codes. Each municipality occurs at most once per date; this is
+checked and a violation is an error.
 }
 \examples{
 \dontrun{
@@ -49,5 +52,14 @@ table(gem$kanton_c)
 }
 }
 \seealso{
-\code{\link[=gemeinde_mutationen]{gemeinde_mutationen()}}, \code{\link[=raumgliederung]{raumgliederung()}}
+\code{\link[=gemeindeMutationen]{gemeindeMutationen()}} for the changes between two stands.
+
+Other swiss.register:
+\code{\link[=gemeindeMutationen]{gemeindeMutationen()}},
+\code{\link[=kanton]{kanton()}},
+\code{\link[=praemienregion]{praemienregion()}},
+\code{\link[=raumgliederung]{raumgliederung()}}
 }
+\concept{historicisation}
+\concept{municipality}
+\concept{swiss.register}

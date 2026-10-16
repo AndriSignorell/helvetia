@@ -2,57 +2,70 @@
 % Please edit documentation in R/raumgliederung.R
 \name{raumgliederung}
 \alias{raumgliederung}
-\title{Assignment of municipalities to official spatial classifications}
+\title{Get the Spatial Classifications of Municipalities}
 \usage{
 raumgliederung(
-  stand_d = NULL,
-  typ = NULL,
+  date = NULL,
+  typology = NULL,
   lang = c("de", "fr", "it", "en"),
   cache = TRUE,
   refresh = FALSE
 )
 }
 \arguments{
-\item{stand_d}{reference date (\code{Date} or \code{"YYYY-MM-DD"}); the default
-\code{NULL} uses today}
+\item{date}{reference date, a \code{Date} or a string \code{"YYYY-MM-DD"}. The
+default \code{NULL} uses today.}
 
-\item{typ}{optional character vector of classification codes or code
-prefixes (case-insensitive), e.g. \code{"GDETYP2020"}; \code{NULL} returns all}
+\item{typology}{optional character vector of classification codes or
+code prefixes, matched case-insensitively, e.g. \code{"GDETYP2020"}. The
+default \code{NULL} returns all classifications.}
 
-\item{lang}{language of the labels, one of \code{"de"}, \code{"fr"}, \code{"it"}, \code{"en"}}
+\item{lang}{language of the labels, one of \code{"de"}, \code{"fr"}, \code{"it"},
+\code{"en"}.}
 
-\item{cache}{logical; read from and write to the local cache (see
-\code{\link[=cache_list]{cache_list()}})}
+\item{cache}{logical; if \code{TRUE}, results are read from and written to the
+local cache (see \code{\link[=cacheList]{cacheList()}}).}
 
-\item{refresh}{logical; force a new download even if a cached copy exists}
+\item{refresh}{logical; if \code{TRUE}, the source is queried again even if a
+cached copy exists.}
 }
 \value{
 A data.frame in long format with the columns \code{stand_d},
-\code{gem_id}, \code{gem_x}, \code{typ_c} (classification column) and \code{value_x}
-(code or label as delivered).
+\code{gem_id}, \code{gem_x}, \code{typ_c} (classification) and \code{value_x} (code or
+label as delivered). The key is \code{stand_d} + \code{gem_id} + \code{typ_c}.
 }
 \description{
-Returns, for each municipality valid at \code{stand_d}, its code in the
-official spatial classifications (Raumgliederungen) of the BFS, such as
-language regions (\code{SPRGEB2020}), municipality typology (\code{GDETYP2020_9},
-\code{GDETYP2020_25}), agglomerations (\code{AGGL2020}) or the urban-rural
-typology (\code{STALAN2020}), from the AGVCH levels service.
+Returns, for each municipality valid at a date, its code in the official
+spatial classifications (Raumgliederungen) of the BFS: language regions
+(\code{SPRGEB2020}), municipality typology (\code{GDETYP2020_9}, \code{GDETYP2020_25}),
+agglomerations (\code{AGGL2020}), the urban-rural typology (\code{STALAN2020}) and
+others. Use it to aggregate municipal data to regions or to stratify an
+analysis by settlement type.
 }
 \details{
-The set of available classifications depends on the reference date;
-classifications are selected by name, never by column position.
+The data come from the AGVCH levels service. The classifications
+available depend on the date; they are selected by name, never by column
+position.
 }
 \note{
 Experimental. The levels service documents its output columns only
 partially (they "vary with language, date and mapping configuration");
 the result therefore keeps every classification column as delivered.
-Planned for a later version according to the specification.
 }
 \examples{
 \dontrun{
-rg <- raumgliederung(as.Date("2021-01-01"), typ = "GDETYP2020_9")
+rg <- raumgliederung(as.Date("2021-01-01"), typology = "GDETYP2020_9")
 }
 }
 \seealso{
-\code{\link[=gemeinde]{gemeinde()}}
+\code{\link[=gemeinde]{gemeinde()}}, \code{\link[=combineRegions]{combineRegions()}} to draw the regions.
+
+Other swiss.register:
+\code{\link[=gemeinde]{gemeinde()}},
+\code{\link[=gemeindeMutationen]{gemeindeMutationen()}},
+\code{\link[=kanton]{kanton()}},
+\code{\link[=praemienregion]{praemienregion()}}
 }
+\concept{municipality}
+\concept{regional-classification}
+\concept{swiss.register}

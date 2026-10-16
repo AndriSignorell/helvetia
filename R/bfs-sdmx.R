@@ -2,12 +2,12 @@
 # Used for the Arealstatistik dataflow CH1.AREA/DF_AREA_NOAS and its
 # codelists (NOAS04 hierarchy, survey periods, regions).
 
-.sdmx_base <- "https://disseminate.stats.swiss/rest"
+.sdmxBase <- "https://disseminate.stats.swiss/rest"
 
 
-.sdmx_xml <- function(path) {
-  url <- paste0(.sdmx_base, path)
-  list(doc = xml2::read_xml(.http_text(url)), url = url)
+.sdmxXml <- function(path) {
+  url <- paste0(.sdmxBase, path)
+  list(doc = xml2::read_xml(.httpText(url)), url = url)
 }
 
 
@@ -19,14 +19,14 @@
 
 
 # Codelist as data.frame(code, parent, name_de, name_fr, name_it, name_en).
-.sdmx_codelist <- function(id, agency = "all", version = "latest") {
-  res <- .sdmx_xml(sprintf("/codelist/%s/%s/%s", agency, id, version))
-  cl <- .parse_sdmx_codelist(res$doc, id)
+.sdmxCodelist <- function(id, agency = "all", version = "latest") {
+  res <- .sdmxXml(sprintf("/codelist/%s/%s/%s", agency, id, version))
+  cl <- .parseSdmxCodelist(res$doc, id)
   attr(cl, "url") <- res$url
   cl
 }
 
-.parse_sdmx_codelist <- function(doc, id) {
+.parseSdmxCodelist <- function(doc, id) {
   lists <- xml2::xml_find_all(
     doc, paste0("//", .el("Codelist", sprintf("@id='%s'", id))))
   if (!length(lists))
@@ -52,12 +52,12 @@
 
 
 # Dimensions of a data structure: data.frame(id, position, codelist).
-.sdmx_dimensions <- function(agency, id, version) {
-  res <- .sdmx_xml(sprintf("/datastructure/%s/%s/%s", agency, id, version))
-  .parse_sdmx_dimensions(res$doc)
+.sdmxDimensions <- function(agency, id, version) {
+  res <- .sdmxXml(sprintf("/datastructure/%s/%s/%s", agency, id, version))
+  .parseSdmxDimensions(res$doc)
 }
 
-.parse_sdmx_dimensions <- function(doc) {
+.parseSdmxDimensions <- function(doc) {
   dims <- xml2::xml_find_all(doc, paste0("//", .el("DimensionList"), "/",
                                        .el("Dimension")))
   cl <- vapply(dims, function(d) {
@@ -74,14 +74,14 @@
 
 # Data query; `key` is a named list dimension -> codes (empty = all).
 # Returns the SDMX-CSV table with all columns as character.
-.sdmx_data <- function(flow, key, dims) {
+.sdmxData <- function(flow, key, dims) {
   k <- paste(vapply(dims, function(d) paste(key[[d]] %||% "", collapse = "+"),
                     ""), collapse = ".")
   url <- sprintf("%s/data/%s/%s?dimensionAtObservation=AllDimensions",
-                 .sdmx_base, flow, k)
-  txt <- .http_text(url, headers = list(
+                 .sdmxBase, flow, k)
+  txt <- .httpText(url, headers = list(
     Accept = "application/vnd.sdmx.data+csv;version=1.0.0"))
-  df <- .read_csv_text(txt)
+  df <- .readCsvText(txt)
   attr(df, "url") <- url
   df
 }

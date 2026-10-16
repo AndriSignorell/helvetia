@@ -1,0 +1,27 @@
+kanton_id;kanton_c;kanton_x_de;kanton_x_fr;kanton_x_it
+1;ZH;Zürich;Zurich;Zurigo
+2;BE;Bern;Berne;Berna
+3;LU;Luzern;Lucerne;Lucerna
+4;UR;Uri;Uri;Uri
+5;SZ;Schwyz;Schwytz;Svitto
+6;OW;Obwalden;Obwald;Obvaldo
+7;NW;Nidwalden;Nidwald;Nidvaldo
+8;GL;Glarus;Glaris;Glarona
+9;ZG;Zug;Zoug;Zugo
+10;FR;Freiburg;Fribourg;Friburgo
+11;SO;Solothurn;Soleure;Soletta
+12;BS;Basel-Stadt;Bâle-Ville;Basilea Città
+13;BL;Basel-Landschaft;Bâle-Campagne;Basilea Campagna
+14;SH;Schaffhausen;Schaffhouse;Sciaffusa
+15;AR;Appenzell Ausserrhoden;Appenzell Rhodes-Extérieures;Appenzello Esterno
+16;AI;Appenzell Innerrhoden;Appenzell Rhodes-Intérieures;Appenzello Interno
+17;SG;St. Gallen;Saint-Gall;San Gallo
+18;GR;Graubünden;Grisons;Grigioni
+19;AG;Aargau;Argovie;Argovia
+20;TG;Thurgau;Thurgovie;Turgovia
+21;TI;Tessin;Tessin;Ticino
+22;VD;Waadt;Vaud;Vaud
+23;VS;Wallis;Valais;Vallese
+24;NE;Neuenburg;Neuchâtel;Neuchâtel
+25;GE;Genf;Genève;Ginevra
+26;JU;Jura;Jura;Giura

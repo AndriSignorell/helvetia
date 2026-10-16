@@ -1,0 +1,70 @@
+---
+title: "Getting started with helvetia"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with helvetia}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+All functions download from official sources and cache the result locally,
+so the chunks below are not evaluated when the vignette is built.
+
+```{r}
+library(helvetia)
+
+gem  <- gemeinde(date = as.Date("2021-01-01"))
+pop  <- popGemeinde(year = 2021)
+geo  <- geoGemeinde(date = as.Date("2021-01-01"))
+area <- arealGemeinde(period = "2013/18", nClasses = 17)
+
+# aggregate the statistics before joining them to the map
+popTotal <- aggregate(ch_n ~ gem_id, data = pop, FUN = sum)
+br <- cut(log10(popTotal$ch_n), 6)
+plotMap(geo, id = popTotal$gem_id,
+        col = hcl.colors(6, "Blues 3", rev = TRUE)[br], border = NA)
+```
+
+## Thematic maps
+
+The generalised ThemaKart geometries of the BFS (formerly used through
+bfsMaps) are downloaded automatically:
+
+```{r}
+plotMap("kanton", id = c("ZH", "BE", "TI"),
+        col = c("steelblue", "orange", "darkseagreen"), labels = TRUE)
+addGewaesser()
+
+# premium regions of the mandatory health insurance
+preg <- praemienregion(2026)
+reg  <- combineRegions(geoGemeinde("2026-01-01"), preg$preg_x, preg$gem_id)
+plotMap(reg, col = hcl.colors(nrow(reg), "Set 3"), labels = TRUE)
+```
+
+## Time concepts
+
+| Field | Meaning |
+|---|---|
+| `stand_d` | exact date of a register or geometry stand |
+| `jahr_n` | statistical year |
+| `period_x` | multi-year survey period, e.g. `"2013/18"` |
+| `gem_stand_d` | municipality boundaries a result is reported on |
+
+A population figure for 2021 refers to the municipalities of 31.12.2021,
+the Arealstatistik 2013/18 to the boundary stand in `gem_stand_d`. Check
+which municipalities match before joining:
+
+```{r}
+setdiff(unique(pop$gem_id), gem$gem_id)
+```
+
+## Sources and cache
+
+```{r}
+sourceInfo(area)
+cacheList()
+```

@@ -4,33 +4,55 @@
 \name{helvetia-package}
 \alias{helvetia}
 \alias{helvetia-package}
-\title{helvetia: Swiss public statistics, regional classifications and spatial
-data}
+\title{helvetia: Swiss Public Statistics, Regional Classifications and Spatial
+Data}
 \description{
-A small, stable API to official Swiss sources, mapped to one
-historicisable data model:
-}
-\details{
-\tabular{lll}{
-   Function \tab Source \tab Key \cr
-   \code{\link[=gemeinde]{gemeinde()}} \tab AGVCH snapshot \tab \code{stand_d} + \code{gem_id} \cr
-   \code{\link[=gemeinde_mutationen]{gemeinde_mutationen()}} \tab AGVCH mutations \tab \code{mutation_id} + old/new version \cr
-   \code{\link[=raumgliederung]{raumgliederung()}} \tab AGVCH levels \tab \code{stand_d} + \code{gem_id} + \code{typ_c} \cr
-   \code{\link[=pop_gemeinde]{pop_gemeinde()}} \tab BFS PXWeb STATPOP \tab \code{jahr_n} + \code{gem_id} + \code{sex_c} + \code{age_n} \cr
-   \code{\link[=geo_gemeinde]{geo_gemeinde()}} \tab swissBOUNDARIES3D \tab \code{stand_d} + \code{gem_id} \cr
-   \code{\link[=areal_gemeinde]{areal_gemeinde()}} \tab BFS SDMX Arealstatistik \tab \code{period_x} + \code{gem_stand_d} + \code{gem_id} + \code{noas_c} \cr
-   \code{\link[=noas]{noas()}} \tab BFS SDMX codelist NOAS04 \tab \code{noas_c} \cr
+helvetia gives a small, stable API to official Swiss sources and maps them
+to one historicisable data model. The functions fall into six groups:
+
+\strong{Registers} -- which units exist at a given date:\tabular{lll}{
+   Function \tab Purpose \tab Key \cr
+   \code{\link[=gemeinde]{gemeinde()}} \tab municipalities valid at a date (AGVCH) \tab \code{stand_d} + \code{gem_id} \cr
+   \code{\link[=gemeindeMutationen]{gemeindeMutationen()}} \tab mergers, splits, renamings (AGVCH) \tab \code{mutation_id} + old/new version \cr
+   \code{\link[=raumgliederung]{raumgliederung()}} \tab spatial classifications (AGVCH) \tab \code{stand_d} + \code{gem_id} + \code{typ_c} \cr
+   \code{\link[=praemienregion]{praemienregion()}} \tab health insurance premium regions (BAG) \tab \code{jahr_n} + \code{gem_id} + \code{preg_c} \cr
+   \code{\link[=kanton]{kanton()}} \tab cantons with numbers and names \tab \code{kanton_id} \cr
 }
 
 
-Column suffixes encode the type: \verb{_id} identifiers, \verb{_x} text, \verb{_c}
-codes, \verb{_n} numbers, \verb{_d} dates, \verb{_l} logicals. Register stands
+\strong{Statistics} -- values per municipality:\tabular{lll}{
+   Function \tab Purpose \tab Key \cr
+   \code{\link[=popGemeinde]{popGemeinde()}} \tab population by sex and age (STATPOP) \tab \code{jahr_n} + \code{gem_id} + \code{sex_c} + \code{age_n} \cr
+   \code{\link[=arealGemeinde]{arealGemeinde()}} \tab land use (Arealstatistik) \tab \code{period_x} + \code{gem_stand_d} + \code{gem_id} + \code{noas_c} \cr
+   \code{\link[=noas]{noas()}} \tab NOAS04 nomenclature \tab \code{noas_c} \cr
+}
+
+
+\strong{Geometries} -- polygons and points:\tabular{ll}{
+   Function \tab Purpose \cr
+   \code{\link[=geoGemeinde]{geoGemeinde()}}, \code{\link[=geoBezirk]{geoBezirk()}}, \code{\link[=geoKanton]{geoKanton()}} \tab institutional boundaries \cr
+   \code{\link[=geoThemakart]{geoThemakart()}} \tab any ThemaKart layer, incl. vegetation area and label points \cr
+   \code{\link[=geoGewaesser]{geoGewaesser()}} \tab lakes and rivers \cr
+   \code{\link[=themakartSets]{themakartSets()}} \tab available ThemaKart sets \cr
+}
+
+
+\strong{Maps} (formerly bfsMaps): \code{\link[=plotMap]{plotMap()}}, \code{\link[=addGewaesser]{addGewaesser()}},
+\code{\link[=stampBfs]{stampBfs()}}.
+
+\strong{Spatial tools}: \code{\link[=combineRegions]{combineRegions()}}, \code{\link[=neighbours]{neighbours()}}, \code{\link[=locate]{locate()}},
+\code{\link[=geocode]{geocode()}}.
+
+\strong{Sources}: \code{\link[=sourceInfo]{sourceInfo()}}, \code{\link[=cacheList]{cacheList()}}, \code{\link[=cacheClear]{cacheClear()}}.
+
+Column names encode the type by suffix: \verb{_id} identifiers, \verb{_x} text,
+\verb{_c} codes, \verb{_n} numbers, \verb{_d} dates, \verb{_l} logicals. Register stands
 (\code{stand_d}), statistical years (\code{jahr_n}), survey periods (\code{period_x})
 and boundary stands (\code{gem_stand_d}) are never mixed: a bare \code{gem_id} is
-not sufficient for historical analyses.
-
-Downloads are cached locally (see \code{\link[=cache_list]{cache_list()}}); the source of every
-result can be inspected with \code{\link[=source_info]{source_info()}}.
+not sufficient for historical analyses. The column names follow the
+attribute conventions of the source databases and are therefore in
+\code{snake_case}, unlike function arguments and list components, which are
+lowerCamelCase.
 }
 \seealso{
 Useful links:
@@ -42,6 +64,16 @@ Useful links:
 }
 \author{
 \strong{Maintainer}: Andri Signorell \email{andri@signorell.net} (\href{https://orcid.org/0000-0003-4311-1969}{ORCID})
+
+Authors:
+\itemize{
+  \item Andri Signorell \email{andri@signorell.net} (\href{https://orcid.org/0000-0003-4311-1969}{ORCID})
+}
+
+Other contributors:
+\itemize{
+  \item Juerg Guggenbuehl (map union functions, from bfsMaps) [contributor]
+}
 
 }
 \keyword{internal}

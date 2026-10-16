@@ -1,5 +1,5 @@
 test_that("internal NOAS04 copy has the full hierarchy", {
-  n <- helvetia:::.parse_noas(helvetia:::.noas_internal())
+  n <- helvetia:::.parseNoas(helvetia:::.noasInternal())
   expect_identical(as.vector(table(n$level_n)), c(4L, 17L, 27L, 72L))
   n17 <- n[n$level_n == 17, ]
   expect_identical(n17$noas_n, 1:17)
@@ -9,7 +9,7 @@ test_that("internal NOAS04 copy has the full hierarchy", {
 
 test_that("SDMX codelist XML is parsed with languages and parents", {
   doc <- xml2::read_xml(fixture("sdmx_codelist.xml"))
-  cl <- helvetia:::.parse_sdmx_codelist(doc, "CL_AREA_NOAS")
+  cl <- helvetia:::.parseSdmxCodelist(doc, "CL_AREA_NOAS")
   expect_identical(cl$code, c("1", "101", "102"))
   expect_identical(cl$parent, c(NA, "1", "1"))
   expect_identical(cl$name_en[1], "Settlement areas")
@@ -17,16 +17,16 @@ test_that("SDMX codelist XML is parsed with languages and parents", {
 })
 
 test_that("inconsistent hierarchy is detected", {
-  cl <- helvetia:::.noas_internal()
+  cl <- helvetia:::.noasInternal()
   cl$parent[cl$code == "101"] <- "2"
-  expect_error(helvetia:::.parse_noas(cl), "hierarchy")
+  expect_error(helvetia:::.parseNoas(cl), "hierarchy")
 })
 
 test_that("Arealstatistik: municipality filter, status, complete grid", {
-  nom <- helvetia:::.parse_noas(helvetia:::.noas_internal())
+  nom <- helvetia:::.parseNoas(helvetia:::.noasInternal())
   nom <- nom[nom$noas_c %in% c("1", "101", "102"), ]
   raw <- read_fixture_csv("sdmx_area.csv")
-  a <- helvetia:::.parse_area(raw, nom, "2013/18", as.Date("2026-01-01"))
+  a <- helvetia:::.parseArea(raw, nom, "2013/18", as.Date("2026-01-01"))
 
   expect_setequal(unique(a$gem_id), c(1L, 2L))           # ZH, B_101 dropped
   x <- a[a$gem_id == 2, ]
@@ -41,28 +41,28 @@ test_that("Arealstatistik: municipality filter, status, complete grid", {
 test_that("class sums are checked against the main domains", {
   res <- data.frame(gem_id = c(1, 1), area_ha = c(40, 50))
   dom <- data.frame(gem_id = 1, area_ha = 100)
-  expect_warning(helvetia:::.check_area_sums(res, dom, 0.5), "differ")
+  expect_warning(helvetia:::.checkAreaSums(res, dom, 0.5), "differ")
   dom$area_ha <- 90
-  expect_silent(helvetia:::.check_area_sums(res, dom, 0.5))
+  expect_silent(helvetia:::.checkAreaSums(res, dom, 0.5))
 })
 
 test_that("period labels and municipality stand", {
   per <- data.frame(code = c("A4", "A5"), name_de = c("2013-2018", "2020-2025"))
-  expect_identical(helvetia:::.area_period(per, "2013/18")$code, "A4")
-  expect_identical(helvetia:::.area_period(per, NULL)$x, "2020/25")
-  expect_error(helvetia:::.area_period(per, "2013"), "not available")
+  expect_identical(helvetia:::.areaPeriod(per, "2013/18")$code, "A4")
+  expect_identical(helvetia:::.areaPeriod(per, NULL)$x, "2020/25")
+  expect_error(helvetia:::.areaPeriod(per, "2013"), "not available")
   expect_identical(
-    helvetia:::.stand_from_codelist("CL_AREA_HIER_REGION_2026_DIFF"),
+    helvetia:::.standFromCodelist("CL_AREA_HIER_REGION_2026_DIFF"),
     as.Date("2026-01-01"))
-  expect_identical(helvetia:::.area_gem_id(c("8100", "CH04", "ZH", "B_101", "261")),
+  expect_identical(helvetia:::.areaGemId(c("8100", "CH04", "ZH", "B_101", "261")),
                    c(NA, NA, NA, NA, 261L))
 })
 
-test_that("live: areal_gemeinde() and noas()", {
+test_that("live: arealGemeinde() and noas()", {
   skip_if_not_live()
-  withr::local_options(helvetia.cache_dir = withr::local_tempdir())
+  withr::local_options(helvetia.cacheDir = withr::local_tempdir())
   expect_identical(nrow(noas(72)), 72L)
-  a <- areal_gemeinde("2013/18", level_n = 17)
+  a <- arealGemeinde("2013/18", nClasses = 17)
   expect_gt(length(unique(a$gem_id)), 2000)
 })
 
@@ -74,7 +74,7 @@ test_that("SDMX dimensions are read in position order", {
     '<s:Dimension id="NOAS" position="1"><s:LocalRepresentation><s:Enumeration>',
     '<Ref id="CL_AREA_NOAS"/></s:Enumeration></s:LocalRepresentation></s:Dimension>',
     '</s:DimensionList></s:Structure>'))
-  d <- helvetia:::.parse_sdmx_dimensions(doc)
+  d <- helvetia:::.parseSdmxDimensions(doc)
   expect_identical(d$id, c("NOAS", "REGION"))
   expect_identical(d$codelist[2], "CL_AREA_HIER_REGION_2026_DIFF")
 })

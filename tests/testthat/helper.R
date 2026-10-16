@@ -1,7 +1,7 @@
 fixture <- function(name) test_path("fixtures", name)
 
 read_fixture_csv <- function(name) {
-  helvetia:::.read_csv_text(paste(readLines(fixture(name), encoding = "UTF-8"),
+  helvetia:::.readCsvText(paste(readLines(fixture(name), encoding = "UTF-8"),
                                   collapse = "\n"))
 }
 
@@ -14,3 +14,6 @@ skip_if_not_live <- function() {
               "live tests disabled (set HELVETIA_LIVE=true)")
   skip_if_offline()
 }
+
+# design rules 3.3 (I): surface partial argument matches in the tests
+options(warnPartialMatchArgs = TRUE)

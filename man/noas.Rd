@@ -2,49 +2,62 @@
 % Please edit documentation in R/noas.R
 \name{noas}
 \alias{noas}
-\title{NOAS04 land use nomenclature}
+\title{Get the NOAS04 Land Use Nomenclature}
 \usage{
-noas(level_n = 17, cache = TRUE, refresh = FALSE)
+noas(nClasses = 17, cache = TRUE, refresh = FALSE)
 }
 \arguments{
-\item{level_n}{nomenclature level(s), any of \code{4}, \code{17}, \code{27}, \code{72}}
+\item{nClasses}{level(s) of the nomenclature, given by their number of
+classes: any of \code{4}, \code{17}, \code{27}, \code{72}.}
 
-\item{cache}{logical; read from and write to the local cache (see
-\code{\link[=cache_list]{cache_list()}})}
+\item{cache}{logical; if \code{TRUE}, results are read from and written to the
+local cache (see \code{\link[=cacheList]{cacheList()}}).}
 
-\item{refresh}{logical; force a new download even if a cached copy exists}
+\item{refresh}{logical; if \code{TRUE}, the source is queried again even if a
+cached copy exists.}
 }
 \value{
-A data.frame with the columns \code{level_n}, \code{noas_c} (hierarchical
-code), \code{noas_n} (class number within the level, e.g. 1--17),
-\code{parent_c} (code of the parent class, \code{NA} for the main domains),
-\code{noas_x_de}, \code{noas_x_fr}, \code{noas_x_it} and \code{noas_x_en}.
+A data.frame with the columns \code{level_n} (number of classes of
+the level), \code{noas_c} (hierarchical code), \code{noas_n} (class number within
+the level, e.g. 1 to 17), \code{parent_c} (code of the parent class, \code{NA}
+for the main domains), \code{noas_x_de}, \code{noas_x_fr}, \code{noas_x_it} and
+\code{noas_x_en}.
 }
 \description{
-The hierarchical standard nomenclature NOAS04 of the Swiss land use
-statistics (Arealstatistik), separate from the measured values: 4 main
-domains, 17 base categories, 27 aggregated categories and 72 basic
-categories.
+Returns the hierarchical standard nomenclature NOAS04 of the Swiss land
+use statistics (Arealstatistik), separate from the measured values: 4
+main domains, 17 base categories, 27 aggregated categories and 72 basic
+categories. Use it to label land use classes in four languages and to
+aggregate fine classes to coarser ones reproducibly.
 }
 \details{
 The nomenclature is read from the SDMX codelist \code{CL_AREA_NOAS} of the BFS
-dissemination service, which carries labels in German, French, Italian
-and English. If the service is unreachable and no cached copy exists, a
-German-only copy shipped with the package is used.
+dissemination service. If the service is unreachable and no cached copy
+exists, a German-only copy shipped with the package is used and a message
+says so.
 
 Codes are hierarchical: the main domain is one digit, each finer level
-appends the two-digit class number of that level, e.g. \code{"1"} ->
-\code{"102"} (base category 2) -> \code{"10202"} (aggregated category 2) ->
-\code{"1020203"} (basic category 3).
+appends the two-digit class number of that level, e.g. \code{"1"} -> \code{"102"}
+(base category 2) -> \code{"10202"} (aggregated category 2) -> \code{"1020203"}
+(basic category 3).
 }
 \examples{
 \dontrun{
 noas(17)
-# parent of each of the 72 basic categories at the 17-class level
-n72 <- noas(72); n27 <- noas(27)
+
+# base category (17 classes) of each of the 72 basic categories
+n72 <- noas(72)
+n27 <- noas(27)
 n72$noas17_c <- n27$parent_c[match(n72$parent_c, n27$noas_c)]
 }
 }
 \seealso{
-\code{\link[=areal_gemeinde]{areal_gemeinde()}}
+\code{\link[=arealGemeinde]{arealGemeinde()}} for the measured areas.
+
+Other swiss.statistics:
+\code{\link[=arealGemeinde]{arealGemeinde()}},
+\code{\link[=popGemeinde]{popGemeinde()}}
 }
+\concept{land-use}
+\concept{nomenclature}
+\concept{swiss.statistics}
