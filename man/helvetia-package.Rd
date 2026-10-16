@@ -58,6 +58,7 @@ lowerCamelCase.
 Useful links:
 \itemize{
   \item \url{https://github.com/AndriSignorell/helvetia}
+  \item \url{https://andrisignorell.github.io/helvetia/}
   \item Report bugs at \url{https://github.com/AndriSignorell/helvetia/issues}
 }
 

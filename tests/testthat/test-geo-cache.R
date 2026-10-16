@@ -56,7 +56,8 @@ test_that("cache: hit, refresh, offline fallback, cache = FALSE", {
   expect_warning(
     r <- helvetia:::.cached("agvch", "v", "k", function() stop("offline"),
                             refresh = TRUE), "cached copy")
-  expect_identical(r, 2)
+  expect_identical(as.vector(r), 2)
+  expect_true(attr(r, "cacheFallback"))
   expect_identical(helvetia:::.cached("agvch", "v", "k2", f, cache = FALSE), 3)
   expect_false(file.exists(helvetia:::.cachePath("agvch", "v", "k2")))
   expect_identical(nrow(cacheList("agvch")), 1L)

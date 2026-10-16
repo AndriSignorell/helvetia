@@ -25,7 +25,7 @@
 # Validate a single year; NULL yields the default.
 .asYear <- function(x, name = "year", default = NULL) {
   if (is.null(x)) return(default)
-  if (!is.numeric(x) || length(x) != 1L || is.na(x) || x != round(x))
+  if (length(x) != 1L || !.isWhole(x))
     stop(sprintf("Argument '%s' must be a single whole number.", name),
          call. = FALSE)
   as.integer(x)
@@ -35,10 +35,17 @@
 # Validate an optional vector of whole numbers (years, ids).
 .checkWhole <- function(x, name) {
   if (is.null(x)) return(invisible(NULL))
-  if (!is.numeric(x) || !length(x) || anyNA(x) || any(x != round(x)))
+  if (!length(x) || !all(.isWhole(x)))
     stop(sprintf("Argument '%s' must be a vector of whole numbers without NA.",
                  name), call. = FALSE)
   invisible(x)
+}
+
+
+# Finite whole numbers within the integer range (so as.integer() is exact).
+.isWhole <- function(x) {
+  is.numeric(x) && !anyNA(x) && all(is.finite(x)) &&
+    all(abs(x) <= .Machine$integer.max) && all(x == round(x))
 }
 
 

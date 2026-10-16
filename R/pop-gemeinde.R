@@ -19,10 +19,15 @@
 #' stand (e.g. "Raumbezug: Gemeinden / 06.04.2025"), not on the stand of the
 #' respective year. That stand is read from the table page and returned in
 #' `gem_stand_d`; join geometries and registers of that stand, e.g.
-#' `geoGemeinde(unique(pop$gem_stand_d))`. If the page cannot be read,
-#' `gem_stand_d` is `NA` and a warning is given. An unchanged BFS number does
-#' not guarantee unchanged boundaries, so always join on the stand, not on
-#' the year.
+#' `geoGemeinde(unique(pop$gem_stand_d))`. An unchanged BFS number does not
+#' guarantee unchanged boundaries, so always join on the stand, not on the
+#' year.
+#'
+#' The stand is never guessed. If the table page cannot be read, the data
+#' are still returned, with `gem_stand_d = NA` and a warning; neither they
+#' nor the metadata are cached, so a cached consistent stand is kept. If the cube metadata cannot be refreshed and the cached
+#' copy is used instead, only year blocks cached together with that stand
+#' are returned; new data are not downloaded under an unverified stand.
 #'
 #' Large requests are split automatically to respect the cell limit of the
 #' API. Each year is cached for the whole of Switzerland and per spatial
@@ -66,23 +71,25 @@ popGemeinde <- function(year = NULL, id = NULL,
 
   px  <- "px-x-0102010000_101"
   url <- .bfsUrl(px)
-  meta <- .cached("pxweb", px, "metadata", cache = cache, refresh = refresh,
-                  mode = "remote-first", fetch = function() {
+  # metadata and spatial reference are fetched and cached as one unit;
+  # an unreadable table page gives an unknown stand, never an older one
+  meta <- .cached("pxweb", px, c("metadata", .popMetaFormat), cache = cache,
+                  refresh = refresh, mode = "remote-first",
+                  validate = .validPopMeta,
+                  store = function(m) !is.na(m$spatial$date),
+                  fetch = function() {
     m <- .bfsMetadata(url)
     m$spatial <- .bfsSpatialRef(px)
-    if (is.na(m$spatial$date)) {           # page unreachable: keep the known
-      old <- tryCatch(readRDS(.cachePath("pxweb", px, "metadata")),
-                      error = function(e) NULL)
-      if (!is.null(old$spatial)) m$spatial <- old$spatial
-    }
     m
   })
+  stale <- isTRUE(attr(meta, "cacheFallback"))
   sel <- .popSelection(meta, year, population)
   stand <- meta$spatial$date
-  if (is.na(stand))
+  known <- !is.na(stand)
+  if (!known)
     warning(paste("The spatial reference (municipality stand) of the cube",
-                  "could not be read from the table page; gem_stand_d is NA."),
-            call. = FALSE)
+                  "could not be read from the table page; gem_stand_d is NA",
+                  "and the result is not cached."), call. = FALSE)
 
   if (!is.null(id)) {
     id <- as.integer(id)
@@ -93,8 +100,13 @@ popGemeinde <- function(year = NULL, id = NULL,
   }
 
   parts <- lapply(sel$years, function(y) {
-    .cached("pxweb", px, c(population, y, format(stand)), cache = cache,
-            refresh = refresh, fetch = function() {
+    .cached("pxweb", px, c(population, y, format(stand)),
+            cache = cache && known, refresh = refresh,
+            validate = .validPopBlock, fetch = function() {
+      if (stale)
+        stop(sprintf(paste("the cube metadata could not be refreshed, so the",
+                           "spatial reference of new data for %s cannot be",
+                           "verified"), y), call. = FALSE)
       query <- setNames(
         list(y, sel$region, sel$popType, sel$nat, sel$sex, sel$age),
         c(sel$var$year, sel$var$region, sel$var$popType, sel$var$nat,
@@ -109,7 +121,8 @@ popGemeinde <- function(year = NULL, id = NULL,
   out <- do.call(rbind, parts)
   if (!is.null(id)) out <- out[out$gem_id %in% id, , drop = FALSE]
   .validateUniqueKey(out, c("jahr_n", "gem_stand_d", "gem_id", "sex_c",
-                            "age_n"), "popGemeinde()")
+                            "age_n"), "popGemeinde()",
+                     allowNA = "gem_stand_d")
 
   .attachSourceMetadata(.resetRownames(out), .sourceMeta(
     metas[[1L]]$source, url,
@@ -119,6 +132,21 @@ popGemeinde <- function(year = NULL, id = NULL,
     notes = c(sprintf("population type: %s", sel$popTypeText),
               "reference date of the counts: 31 December",
               meta$spatial$text %||% NA_character_)))
+}
+
+
+# Format version of the cached cube metadata; increase it whenever the
+# structure changes, so entries of older package versions are not read.
+.popMetaFormat <- "v2"
+
+.validPopMeta <- function(m) {
+  is.list(m) && is.list(m$variables) && is.list(m$spatial) &&
+    inherits(m$spatial$date, "Date") && length(m$spatial$date) == 1L
+}
+
+.validPopBlock <- function(x) {
+  is.data.frame(x) && "gem_stand_d" %in% names(x) &&
+    inherits(sourceInfo(x), "SourceInfo")
 }
 
 

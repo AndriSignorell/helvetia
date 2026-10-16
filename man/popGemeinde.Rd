@@ -56,10 +56,15 @@ things. The BFS publishes the whole time series on \emph{one} municipality
 stand (e.g. "Raumbezug: Gemeinden / 06.04.2025"), not on the stand of the
 respective year. That stand is read from the table page and returned in
 \code{gem_stand_d}; join geometries and registers of that stand, e.g.
-\code{geoGemeinde(unique(pop$gem_stand_d))}. If the page cannot be read,
-\code{gem_stand_d} is \code{NA} and a warning is given. An unchanged BFS number does
-not guarantee unchanged boundaries, so always join on the stand, not on
-the year.
+\code{geoGemeinde(unique(pop$gem_stand_d))}. An unchanged BFS number does not
+guarantee unchanged boundaries, so always join on the stand, not on the
+year.
+
+The stand is never guessed. If the table page cannot be read, the data
+are still returned, with \code{gem_stand_d = NA} and a warning; neither they
+nor the metadata are cached, so a cached consistent stand is kept. If the cube metadata cannot be refreshed and the cached
+copy is used instead, only year blocks cached together with that stand
+are returned; new data are not downloaded under an unverified stand.
 
 Large requests are split automatically to respect the cell limit of the
 API. Each year is cached for the whole of Switzerland and per spatial

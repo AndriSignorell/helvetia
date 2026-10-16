@@ -24,16 +24,25 @@
 #                          if the source is unreachable (used for small,
 #                          frequently changing metadata).
 # With cache = FALSE nothing is read from or written to the cache.
+#   validate: optional function(x) -> TRUE/FALSE; a cached entry that fails
+#             it (e.g. written by an older package version) is ignored, as
+#             if absent, and never returned as fallback.
+#   store:    optional function(x) -> TRUE/FALSE; a fresh result failing it
+#             is returned but not written, so it cannot replace a good entry.
+# A cached copy returned because the source failed carries the attribute
+# "cacheFallback" = TRUE, so callers can avoid combining it with new data.
 .cached <- function(source, version, key, fetch, cache = TRUE, refresh = FALSE,
-                    mode = c("cache-first", "remote-first")) {
+                    mode = c("cache-first", "remote-first"), validate = NULL,
+                    store = NULL) {
   mode <- match.arg(mode)
   .checkFlag(cache)
   .checkFlag(refresh)
   path <- .cachePath(source, version, key)
-  have <- cache && file.exists(path)
+  old <- if (cache && file.exists(path)) .readCached(path, validate)
+  have <- !is.null(old)
 
   if (have && !refresh && mode == "cache-first")
-    return(readRDS(path))
+    return(old)
 
   res <- tryCatch(fetch(), error = function(e) e)
 
@@ -43,12 +52,16 @@
         "%s could not be retrieved (%s); using the cached copy from %s.",
         source, conditionMessage(res),
         format(file.mtime(path), "%Y-%m-%d %H:%M")), call. = FALSE)
-      return(readRDS(path))
+      attr(old, "cacheFallback") <- TRUE
+      return(old)
     }
     stop(res)
   }
+  if (!is.null(validate) && !isTRUE(validate(res)))
+    stop(sprintf("Unexpected structure of the %s result.", source),
+         call. = FALSE)
 
-  if (cache) {
+  if (cache && (is.null(store) || isTRUE(store(res)))) {
     dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
     saveRDS(res, path)
   }
@@ -116,6 +129,14 @@ cacheClear <- function(source = NULL) {
   n <- sum(file.remove(files))
   message(sprintf("%d cached file(s) removed.", n))
   invisible(n)
+}
+
+
+# Read a cache entry; unreadable or invalid entries count as absent.
+.readCached <- function(path, validate = NULL) {
+  x <- tryCatch(readRDS(path), error = function(e) NULL)
+  if (is.null(x) || (!is.null(validate) && !isTRUE(validate(x)))) return(NULL)
+  x
 }
 
 

@@ -60,10 +60,18 @@ local_pop_mocks <- function(env = parent.frame()) {
                        .local_envir = env)
   calls <- new.env()
   calls$n <- 0L
+  calls$online <- TRUE                  # API reachable
+  calls$stand <- "2025-04-06"           # stand on the table page, NA: unreadable
   local_mocked_bindings(
-    .bfsMetadata = function(url) meta(),
-    .bfsSpatialRef = function(px) list(date = as.Date("2025-04-06"),
-                                       text = "Raumbezug: Gemeinden / 06.04.2025"),
+    .bfsMetadata = function(url) {
+      if (!calls$online) stop("Connection to pxweb failed")
+      meta()
+    },
+    .bfsSpatialRef = function(px) {
+      d <- as.Date(calls$stand)
+      list(date = d, text = if (!is.na(d))
+        paste("Raumbezug: Gemeinden /", format(d, "%d.%m.%Y")) else NA)
+    },
     .bfsQuery = function(url, query) {
       calls$n <- calls$n + 1L
       df <- helvetia:::.parseBfsData(read_fixture_json("pxweb_data.json"))
@@ -92,6 +100,56 @@ test_that("popGemeinde: years and ids must be whole numbers", {
   expect_error(popGemeinde(id = 1.5), "'id'")
   expect_error(popGemeinde(id = NA_real_), "'id'")
   expect_error(popGemeinde(2021, id = 9999), "'id'")
+})
+
+test_that("popGemeinde: unknown stand gives NA with warning, not cached", {
+  calls <- local_pop_mocks()
+  calls$stand <- NA
+  expect_warning(p <- popGemeinde(2021), "gem_stand_d is NA")
+  expect_true(all(is.na(p$gem_stand_d)))
+  expect_identical(nrow(cacheList("pxweb")), 0L)
+})
+
+test_that("popGemeinde: an older stand never labels new data", {
+  calls <- local_pop_mocks()
+  popGemeinde(2021)                                    # caches stand 06.04.2025
+  # page unreadable, API fine: stand unknown, not the cached one
+  calls$stand <- NA
+  expect_warning(p <- popGemeinde(2021), "gem_stand_d is NA")
+  expect_true(all(is.na(p$gem_stand_d)))
+  # API offline: the cached metadata and the block cached with it fit together
+  calls$stand <- "2025-04-06"
+  calls$online <- FALSE
+  expect_warning(p <- popGemeinde(2021), "cached copy")
+  expect_identical(unique(p$gem_stand_d), as.Date("2025-04-06"))
+  # ... but no new year is downloaded under the unverified stand
+  expect_error(suppressWarnings(popGemeinde(2020)), "cannot be verified")
+})
+
+test_that("popGemeinde: metadata cached by 0.1.0 are not used", {
+  calls <- local_pop_mocks()
+  px <- "px-x-0102010000_101"
+  old <- meta()                                        # no $spatial
+  for (key in list("metadata", c("metadata", "v2"))) {
+    path <- helvetia:::.cachePath("pxweb", px, key)
+    dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+    saveRDS(old, path)
+  }
+  calls$online <- FALSE
+  expect_error(popGemeinde(2021), "Connection to pxweb failed")
+  calls$online <- TRUE
+  p <- popGemeinde(2021)
+  expect_identical(unique(p$gem_stand_d), as.Date("2025-04-06"))
+  m <- readRDS(helvetia:::.cachePath("pxweb", px, c("metadata", "v2")))
+  expect_identical(m$spatial$date, as.Date("2025-04-06"))
+})
+
+test_that("whole numbers: no Inf, no values beyond the integer range", {
+  expect_error(helvetia:::.checkWhole(Inf, "year"), "'year'")
+  expect_error(helvetia:::.checkWhole(3e9, "id"), "'id'")
+  expect_error(helvetia:::.asYear(-Inf, "year"), "'year'")
+  expect_error(helvetia:::.checkWhole("2021", "year"), "'year'")
+  expect_silent(helvetia:::.checkWhole(c(1, 2147483647), "id"))
 })
 
 test_that("key validation rejects missing key values", {
